@@ -1,0 +1,22 @@
+import { Controller, Get, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { GetTasksService } from '../services';
+import { GetTasksQueryDto, GetTasksResponseDto } from '../contract';
+
+@ApiTags('tasks')
+@Controller('v1/tasks')
+export class GetTasksEndpoint {
+  constructor(private readonly getTasksService: GetTasksService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get list of tasks with pagination and filtering' })
+  @ApiResponse({
+    status: 200,
+    description: 'Tasks retrieved successfully',
+    type: GetTasksResponseDto,
+  })
+  async getTasks(@Query() query: GetTasksQueryDto): Promise<GetTasksResponseDto> {
+    return this.getTasksService.execute(query);
+  }
+}
+

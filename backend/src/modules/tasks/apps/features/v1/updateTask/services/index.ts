@@ -1,0 +1,44 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Task } from '../../../../../entities/task.entity';
+import { UpdateTaskRequestDto, UpdateTaskResponseDto } from '../contract';
+
+@Injectable()
+export class UpdateTaskService {
+  constructor(
+    @InjectRepository(Task)
+    private readonly taskRepository: Repository<Task>,
+  ) {}
+
+  async execute(
+    id: string,
+    request: UpdateTaskRequestDto,
+  ): Promise<UpdateTaskResponseDto> {
+    const task = await this.taskRepository.findOne({ where: { id } });
+
+    if (!task) {
+      throw new NotFoundException(`Task with ID ${id} not found`);
+    }
+
+    task.title = request.title;
+    task.description = request.description || null;
+    task.status = request.status;
+    task.priority = request.priority || null;
+    task.due_date = request.due_date ? new Date(request.due_date) : null;
+
+    const updatedTask = await this.taskRepository.save(task);
+
+    return {
+      id: updatedTask.id,
+      title: updatedTask.title,
+      description: updatedTask.description,
+      status: updatedTask.status,
+      priority: updatedTask.priority,
+      due_date: updatedTask.due_date,
+      created_at: updatedTask.created_at,
+      updated_at: updatedTask.updated_at,
+    };
+  }
+}
+

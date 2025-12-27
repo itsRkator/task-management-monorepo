@@ -1,0 +1,24 @@
+import { Controller, Get, Param } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { GetTaskByIdService } from '../services';
+import { GetTaskByIdResponseDto } from '../contract';
+
+@ApiTags('tasks')
+@Controller('v1/tasks')
+export class GetTaskByIdEndpoint {
+  constructor(private readonly getTaskByIdService: GetTaskByIdService) {}
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a task by ID' })
+  @ApiParam({ name: 'id', description: 'Task ID', type: 'string', format: 'uuid' })
+  @ApiResponse({
+    status: 200,
+    description: 'Task retrieved successfully',
+    type: GetTaskByIdResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Task not found' })
+  async getById(@Param('id') id: string): Promise<GetTaskByIdResponseDto> {
+    return this.getTaskByIdService.execute(id);
+  }
+}
+
