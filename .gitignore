@@ -137,3 +137,9 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+
+# Unnecessary files
+DEPENDENCIES.md
+TECHNICAL_ASSESSMENT.md
+Technical_Assessment.md
