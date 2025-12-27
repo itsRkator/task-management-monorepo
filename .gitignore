@@ -140,6 +140,5 @@ vite.config.ts.timestamp-*
 
 
 # Unnecessary files
-DEPENDENCIES.md
-TECHNICAL_ASSESSMENT.md
-Technical_Assessment.md
+problem-statement.pdf
+PROBLEM_STATEMENT.md
