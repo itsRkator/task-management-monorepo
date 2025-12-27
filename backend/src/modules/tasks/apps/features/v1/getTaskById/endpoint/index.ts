@@ -10,7 +10,12 @@ export class GetTaskByIdEndpoint {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a task by ID' })
-  @ApiParam({ name: 'id', description: 'Task ID', type: 'string', format: 'uuid' })
+  @ApiParam({
+    name: 'id',
+    description: 'Task ID',
+    type: 'string',
+    format: 'uuid',
+  })
   @ApiResponse({
     status: 200,
     description: 'Task retrieved successfully',
@@ -21,4 +26,3 @@ export class GetTaskByIdEndpoint {
     return this.getTaskByIdService.execute(id);
   }
 }
-

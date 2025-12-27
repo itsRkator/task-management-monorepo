@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { Task } from '../../../../../entities/task.entity';
-import { GetTasksQueryDto, GetTasksResponseDto, TaskItemDto } from '../contract';
+import {
+  GetTasksQueryDto,
+  GetTasksResponseDto,
+  TaskItemDto,
+} from '../contract';
 
 @Injectable()
 export class GetTasksService {
@@ -34,11 +38,15 @@ export class GetTasksService {
     let queryBuilder = this.taskRepository.createQueryBuilder('task');
 
     if (query.status) {
-      queryBuilder = queryBuilder.where('task.status = :status', { status: query.status });
+      queryBuilder = queryBuilder.where('task.status = :status', {
+        status: query.status,
+      });
     }
 
     if (query.priority) {
-      queryBuilder = queryBuilder.andWhere('task.priority = :priority', { priority: query.priority });
+      queryBuilder = queryBuilder.andWhere('task.priority = :priority', {
+        priority: query.priority,
+      });
     }
 
     if (query.search) {
@@ -78,4 +86,3 @@ export class GetTasksService {
     };
   }
 }
-

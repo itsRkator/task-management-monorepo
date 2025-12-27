@@ -1,10 +1,8 @@
-"use client"
+import * as React from 'react';
 
-import * as React from "react"
+import { cn } from '@/lib/utils';
 
-import { cn } from "@/lib/utils"
-
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+const Table = ({ className, children, ...props }: React.ComponentProps<'table'>) => {
   return (
     <div
       data-slot="table-container"
@@ -12,97 +10,114 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn('w-full caption-bottom text-sm', className)}
         {...props}
-      />
+      >
+        {children}
+      </table>
     </div>
-  )
-}
+  );
+};
 
-function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
+const TableHeader = ({
+  className,
+  ...props
+}: React.ComponentProps<'thead'>) => {
   return (
     <thead
       data-slot="table-header"
-      className={cn("bg-slate-50 dark:bg-slate-900/50 [&_tr]:border-b border-slate-200 dark:border-slate-800", className)}
+      className={cn(
+        'bg-slate-50 dark:bg-slate-900/50 [&_tr]:border-b border-slate-200 dark:border-slate-800',
+        className
+      )}
       {...props}
     />
-  )
-}
+  );
+};
 
-function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
+const TableBody = ({ className, ...props }: React.ComponentProps<'tbody'>) => {
   return (
     <tbody
       data-slot="table-body"
-      className={cn("[&_tr:last-child]:border-0 [&_tr]:border-b border-slate-200 dark:border-slate-800", className)}
+      className={cn(
+        '[&_tr:last-child]:border-0 [&_tr]:border-b border-slate-200 dark:border-slate-800',
+        className
+      )}
       {...props}
     />
-  )
-}
+  );
+};
 
-function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
+const TableFooter = ({
+  className,
+  ...props
+}: React.ComponentProps<'tfoot'>) => {
   return (
     <tfoot
       data-slot="table-footer"
       className={cn(
-        "bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 font-medium [&>tr]:last:border-b-0",
+        'bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 font-medium [&>tr]:last:border-b-0',
         className
       )}
       {...props}
     />
-  )
-}
+  );
+};
 
-function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
+const TableRow = ({ className, ...props }: React.ComponentProps<'tr'>) => {
   return (
     <tr
       data-slot="table-row"
       className={cn(
-        "hover:bg-slate-50 dark:hover:bg-slate-900/50 data-[state=selected]:bg-blue-50 dark:data-[state=selected]:bg-blue-900/20 border-b border-slate-200 dark:border-slate-800 transition-colors duration-150 cursor-default",
+        'hover:bg-slate-50 dark:hover:bg-slate-900/50 data-[state=selected]:bg-blue-50 dark:data-[state=selected]:bg-blue-900/20 border-b border-slate-200 dark:border-slate-800 transition-colors duration-150 cursor-default',
         className
       )}
       {...props}
     />
-  )
-}
+  );
+};
 
-function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+const TableHead = ({ className, ...props }: React.ComponentProps<'th'>) => {
   return (
     <th
       data-slot="table-head"
       className={cn(
-        "h-12 px-4 text-left align-middle font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        'h-12 px-4 text-left align-middle font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className
       )}
       {...props}
     />
-  )
-}
+  );
+};
 
-function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+const TableCell = ({ className, ...props }: React.ComponentProps<'td'>) => {
   return (
     <td
       data-slot="table-cell"
       className={cn(
-        "p-4 align-middle text-slate-900 dark:text-slate-100 whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        'p-4 align-middle text-slate-900 dark:text-slate-100 whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className
       )}
       {...props}
     />
-  )
-}
+  );
+};
 
-function TableCaption({
+const TableCaption = ({
   className,
   ...props
-}: React.ComponentProps<"caption">) {
+}: React.ComponentProps<'caption'>) => {
   return (
     <caption
       data-slot="table-caption"
-      className={cn("mt-4 text-sm text-slate-600 dark:text-slate-400", className)}
+      className={cn(
+        'mt-4 text-sm text-slate-600 dark:text-slate-400',
+        className
+      )}
       {...props}
     />
-  )
-}
+  );
+};
 
 export {
   Table,
@@ -113,4 +128,4 @@ export {
   TableRow,
   TableCell,
   TableCaption,
-}
+};

@@ -66,7 +66,9 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
-.env
+# .env files are excluded by default for security
+# Uncomment the line below if you want to copy .env files into the image (NOT recommended for production)
+# .env
 .env.*
 !.env.example
 
@@ -142,4 +144,3 @@ vite.config.ts.timestamp-*
 # Unnecessary files
 problem-statement.pdf
 PROBLEM_STATEMENT.md
-COMPLIANCE_REPORT.md

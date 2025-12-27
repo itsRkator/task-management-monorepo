@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TasksNewRouteImport } from './routes/tasks/new'
 import { Route as TasksTaskIdRouteImport } from './routes/tasks/$taskId'
 import { Route as TasksEditTaskIdRouteImport } from './routes/tasks/edit.$taskId'
 import { Route as TasksTaskIdEditRouteImport } from './routes/tasks/$taskId.edit'
 
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -43,6 +49,7 @@ const TasksTaskIdEditRoute = TasksTaskIdEditRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/tasks/$taskId': typeof TasksTaskIdRouteWithChildren
   '/tasks/new': typeof TasksNewRoute
   '/tasks/$taskId/edit': typeof TasksTaskIdEditRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/tasks/$taskId': typeof TasksTaskIdRouteWithChildren
   '/tasks/new': typeof TasksNewRoute
   '/tasks/$taskId/edit': typeof TasksTaskIdEditRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/tasks/$taskId': typeof TasksTaskIdRouteWithChildren
   '/tasks/new': typeof TasksNewRoute
   '/tasks/$taskId/edit': typeof TasksTaskIdEditRoute
@@ -67,6 +76,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$'
     | '/tasks/$taskId'
     | '/tasks/new'
     | '/tasks/$taskId/edit'
@@ -74,6 +84,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$'
     | '/tasks/$taskId'
     | '/tasks/new'
     | '/tasks/$taskId/edit'
@@ -81,6 +92,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/$'
     | '/tasks/$taskId'
     | '/tasks/new'
     | '/tasks/$taskId/edit'
@@ -89,6 +101,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SplatRoute: typeof SplatRoute
   TasksTaskIdRoute: typeof TasksTaskIdRouteWithChildren
   TasksNewRoute: typeof TasksNewRoute
   TasksEditTaskIdRoute: typeof TasksEditTaskIdRoute
@@ -96,6 +109,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -148,6 +168,7 @@ const TasksTaskIdRouteWithChildren = TasksTaskIdRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SplatRoute: SplatRoute,
   TasksTaskIdRoute: TasksTaskIdRouteWithChildren,
   TasksNewRoute: TasksNewRoute,
   TasksEditTaskIdRoute: TasksEditTaskIdRoute,

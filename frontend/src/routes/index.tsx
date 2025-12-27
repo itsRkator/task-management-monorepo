@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-function TaskListPage() {
+const TaskListPage = () => {
   const navigate = useNavigate();
   const {
     tasks,
@@ -153,7 +153,7 @@ function TaskListPage() {
       );
     }
 
-    if (tasks.length === 0) {
+    if ((tasks?.length ?? 0) === 0) {
       const hasFilters = filters.search || filters.status || filters.priority;
       const emptyMessage = hasFilters
         ? 'Try adjusting your filters to see more results.'
@@ -185,11 +185,11 @@ function TaskListPage() {
 
     return (
       <>
-        <div className={`grid gap-4 p-6 ${getGridClasses(tasks.length)}`}>
+        <div className={`grid gap-4 p-6 ${getGridClasses(tasks?.length ?? 0)}`}>
           {tasks.map((task) => (
             <Card
               key={task.id}
-              className={`hover:shadow-lg transition-shadow duration-200 flex flex-col ${getCardClasses(tasks.length)}`}
+              className={`hover:shadow-lg transition-shadow duration-200 flex flex-col ${getCardClasses(tasks?.length ?? 0)}`}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
@@ -234,10 +234,15 @@ function TaskListPage() {
                 )}
               </CardContent>
               <CardFooter className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800 mt-auto">
-                <Button 
-                  variant="edit" 
+                <Button
+                  variant="edit"
                   size="sm"
-                  onClick={() => navigate({ to: '/tasks/edit/$taskId', params: { taskId: task.id } })}
+                  onClick={() =>
+                    navigate({
+                      to: '/tasks/edit/$taskId',
+                      params: { taskId: task.id },
+                    })
+                  }
                 >
                   <Edit className="h-4 w-4 mr-1" />
                   Edit
@@ -378,11 +383,11 @@ function TaskListPage() {
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Showing{' '}
             <span className="font-semibold text-slate-900 dark:text-slate-100">
-              {tasks.length}
+              {tasks?.length ?? 0}
             </span>{' '}
             of{' '}
             <span className="font-semibold text-slate-900 dark:text-slate-100">
-              {pagination.total}
+              {pagination?.total ?? 0}
             </span>{' '}
             tasks
           </p>
@@ -417,8 +422,10 @@ function TaskListPage() {
       </Dialog>
     </div>
   );
-}
+};
 
 export const Route = createFileRoute('/')({
   component: TaskListPage,
 });
+
+export default TaskListPage;

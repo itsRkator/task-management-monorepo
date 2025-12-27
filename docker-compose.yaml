@@ -1,0 +1,128 @@
+name: task-management-monorepo
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: task-management-postgres
+    restart: unless-stopped
+    # ports:
+    #   - '5433:5432'
+    # Alternatively, you can specify all environment variables directly:
+    # environment:
+    #   - POSTGRES_USER=postgres
+    #   - POSTGRES_PASSWORD=postgres
+    #   - POSTGRES_DB=task_management
+    env_file:
+      - ./postgres/.env
+    shm_size: 128mb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      # Improved healthcheck: verify database is ready and accepting connections
+      test: ['CMD-SHELL', 'pg_isready -U postgres || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      # Uncomment target below to use dev stage with dev dependencies for hot-reloading
+      # target: dev
+    ports:
+      - '3000:3000'
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override DB connection for Docker networking (use service name instead of localhost)
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=task_management
+    # Alternatively, you can specify all environment variables directly:
+    # environment:
+    #   - PORT=3000
+    #   - DB_HOST=postgres
+    #   - DB_PORT=5432
+    #   - DB_USERNAME=postgres
+    #   - DB_PASSWORD=postgres
+    #   - DB_NAME=task_management
+    #   - DB_SYNCHRONIZE=false
+    #   - DB_LOGGING=false
+    #   - FRONTEND_URL=http://localhost:5173
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Development bind mounts for hot-reloading (comment out for production)
+    # These mounts allow code changes without rebuilding the container
+    volumes:
+      - ./backend:/app
+      - ./backend/.env:/app/.env
+      # Exclude node_modules from bind mount to use container's dependencies
+      - /app/node_modules
+      # In dev mode, allow dist to be written to by the dev server
+      # In production, exclude it: - /app/dist
+    # DEV MODE: Uncomment the lines below to enable hot-reloading
+    # 1. Uncomment 'target: dev' in build section above
+    # 2. Uncomment the command below
+    # This will run migrations once, then start the dev server with watch mode
+    # command: >
+    #   sh -c "
+    #     sleep 2 &&
+    #     echo 'Running migrations...' &&
+    #     node -r ts-node/register ./node_modules/typeorm/cli.js migration:run -d dist/src/data-source.js &&
+    #     echo 'Starting dev server with hot-reload...' &&
+    #     npm run start:dev
+    #   "
+    networks:
+      - app-network
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:3000/ || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - '80:80'
+    env_file:
+      - ./frontend/.env
+    # Alternatively, you can specify environment variables directly:
+    # environment:
+    #   - PORT=5173
+    #   - VITE_API_URL=http://localhost:3000/api
+    networks:
+      - app-network
+    # Development bind mounts for hot-reloading (comment out for production)
+    # Note: Frontend uses nginx to serve built files from /usr/share/nginx/html
+    # You'll need to rebuild the frontend locally (npm run build) for changes to appear
+    volumes:
+      - ./frontend:/app
+      - ./frontend/.env:/app/.env
+      # Exclude node_modules from bind mount to use container's dependencies
+      - /app/node_modules
+      # Mount dist to nginx's serving directory for development
+      - ./frontend/dist:/usr/share/nginx/html
+    depends_on:
+      - backend
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:80/ || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  postgres-data:
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,7 +1,11 @@
 import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert';
 import { CreateTaskService } from './index';
-import { Task, TaskStatus, TaskPriority } from '../../../../../entities/task.entity';
+import {
+  Task,
+  TaskStatus,
+  TaskPriority,
+} from '../../../../../entities/task.entity';
 import { CreateTaskRequestDto } from '../contract';
 
 describe('CreateTaskService', () => {
@@ -78,4 +82,3 @@ describe('CreateTaskService', () => {
     assert.strictEqual(result.due_date, null);
   });
 });
-

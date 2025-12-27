@@ -10,7 +10,12 @@ export class RemoveTaskEndpoint {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a task' })
-  @ApiParam({ name: 'id', description: 'Task ID', type: 'string', format: 'uuid' })
+  @ApiParam({
+    name: 'id',
+    description: 'Task ID',
+    type: 'string',
+    format: 'uuid',
+  })
   @ApiResponse({
     status: 200,
     description: 'Task deleted successfully',
@@ -21,4 +26,3 @@ export class RemoveTaskEndpoint {
     return this.removeTaskService.execute(id);
   }
 }
-

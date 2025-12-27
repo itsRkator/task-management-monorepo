@@ -15,8 +15,9 @@ export class GetTasksEndpoint {
     description: 'Tasks retrieved successfully',
     type: GetTasksResponseDto,
   })
-  async getTasks(@Query() query: GetTasksQueryDto): Promise<GetTasksResponseDto> {
+  async getTasks(
+    @Query() query: GetTasksQueryDto,
+  ): Promise<GetTasksResponseDto> {
     return this.getTasksService.execute(query);
   }
 }
-

@@ -1,12 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
-import CreateOrEditTaskPage from './CreateOrEdit';
+import CreateOrEditTaskPage from '@/components/tasks/CreateOrEdit';
 
-function EditTaskPage() {
+const EditTaskPage = () => {
   const { taskId } = Route.useParams();
 
   return <CreateOrEditTaskPage mode="edit" taskId={taskId} />;
-}
+};
 
 export const Route = createFileRoute('/tasks/$taskId/edit')({
   component: EditTaskPage,
 });
+
+export default EditTaskPage;

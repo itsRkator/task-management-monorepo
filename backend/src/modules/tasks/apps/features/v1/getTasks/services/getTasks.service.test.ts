@@ -54,7 +54,10 @@ describe('GetTasksService', () => {
       },
     ];
 
-    mockQueryBuilder.getManyAndCount.mock.mockImplementation(async () => [mockTasks, 1]);
+    mockQueryBuilder.getManyAndCount.mock.mockImplementation(async () => [
+      mockTasks,
+      1,
+    ]);
 
     const result = await service.execute(query);
 
@@ -72,7 +75,10 @@ describe('GetTasksService', () => {
       status: TaskStatus.COMPLETED,
     };
 
-    mockQueryBuilder.getManyAndCount.mock.mockImplementation(async () => [[], 0]);
+    mockQueryBuilder.getManyAndCount.mock.mockImplementation(async () => [
+      [],
+      0,
+    ]);
 
     void service.execute(query);
 
@@ -86,7 +92,10 @@ describe('GetTasksService', () => {
       priority: TaskPriority.HIGH,
     };
 
-    mockQueryBuilder.getManyAndCount.mock.mockImplementation(async () => [[], 0]);
+    mockQueryBuilder.getManyAndCount.mock.mockImplementation(async () => [
+      [],
+      0,
+    ]);
 
     void service.execute(query);
 
@@ -100,7 +109,10 @@ describe('GetTasksService', () => {
       search: 'test',
     };
 
-    mockQueryBuilder.getManyAndCount.mock.mockImplementation(async () => [[], 0]);
+    mockQueryBuilder.getManyAndCount.mock.mockImplementation(async () => [
+      [],
+      0,
+    ]);
 
     void service.execute(query);
 
@@ -110,7 +122,10 @@ describe('GetTasksService', () => {
   it('should use default pagination values', async () => {
     const query: GetTasksQueryDto = {};
 
-    mockQueryBuilder.getManyAndCount.mock.mockImplementation(async () => [[], 0]);
+    mockQueryBuilder.getManyAndCount.mock.mockImplementation(async () => [
+      [],
+      0,
+    ]);
 
     const result = await service.execute(query);
 

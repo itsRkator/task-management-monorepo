@@ -33,8 +33,17 @@ const createTaskSchema = z.object({
     .min(1, 'Title is required')
     .max(255, 'Title must be less than 255 characters'),
   description: z.string().optional(),
-  status: z.enum([TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED, TaskStatus.CANCELLED]).optional(),
-  priority: z.enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH]).optional(),
+  status: z
+    .enum([
+      TaskStatus.PENDING,
+      TaskStatus.IN_PROGRESS,
+      TaskStatus.COMPLETED,
+      TaskStatus.CANCELLED,
+    ])
+    .optional(),
+  priority: z
+    .enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH])
+    .optional(),
   due_date: z.string().optional(),
 });
 
@@ -44,8 +53,15 @@ const updateTaskSchema = z.object({
     .min(1, 'Title is required')
     .max(255, 'Title must be less than 255 characters'),
   description: z.string().optional(),
-  status: z.enum([TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED, TaskStatus.CANCELLED]),
-  priority: z.enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH]).optional(),
+  status: z.enum([
+    TaskStatus.PENDING,
+    TaskStatus.IN_PROGRESS,
+    TaskStatus.COMPLETED,
+    TaskStatus.CANCELLED,
+  ]),
+  priority: z
+    .enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH])
+    .optional(),
   due_date: z.string().optional(),
 });
 
@@ -57,9 +73,13 @@ interface CreateOrEditTaskPageProps {
   mode: 'create' | 'edit';
 }
 
-function CreateOrEditTaskPage({ taskId, mode }: Readonly<CreateOrEditTaskPageProps>) {
+const CreateOrEditTaskPage = ({
+  taskId,
+  mode,
+}: Readonly<CreateOrEditTaskPageProps>) => {
   const navigate = useNavigate();
-  const { selectedTask, loading, fetchTaskById, createTask, updateTask } = useTaskStore();
+  const { selectedTask, loading, fetchTaskById, createTask, updateTask } =
+    useTaskStore();
   const isEditMode = mode === 'edit';
 
   const taskSchema = isEditMode ? updateTaskSchema : createTaskSchema;
@@ -112,7 +132,9 @@ function CreateOrEditTaskPage({ taskId, mode }: Readonly<CreateOrEditTaskPagePro
           description: updateData.description || undefined,
           status: updateData.status,
           priority: updateData.priority,
-          due_date: updateData.due_date ? new Date(updateData.due_date).toISOString() : undefined,
+          due_date: updateData.due_date
+            ? new Date(updateData.due_date).toISOString()
+            : undefined,
         });
         toast.success('Task updated successfully');
         navigate({ to: '/tasks/$taskId', params: { taskId } });
@@ -132,7 +154,9 @@ function CreateOrEditTaskPage({ taskId, mode }: Readonly<CreateOrEditTaskPagePro
       if (error instanceof AxiosError && error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else {
-        toast.error(isEditMode ? 'Failed to update task' : 'Failed to create task');
+        toast.error(
+          isEditMode ? 'Failed to update task' : 'Failed to create task'
+        );
       }
     }
   };
@@ -202,7 +226,9 @@ function CreateOrEditTaskPage({ taskId, mode }: Readonly<CreateOrEditTaskPagePro
                 id="title"
                 {...register('title')}
                 placeholder="Enter task title"
-                className={errors.title ? 'border-red-500 focus:ring-red-500' : ''}
+                className={
+                  errors.title ? 'border-red-500 focus:ring-red-500' : ''
+                }
               />
               {errors.title && (
                 <p className="text-red-600 dark:text-red-400 text-sm flex items-center gap-1.5 mt-1">
@@ -220,7 +246,9 @@ function CreateOrEditTaskPage({ taskId, mode }: Readonly<CreateOrEditTaskPagePro
                 {...register('description')}
                 placeholder="Enter task description (optional)"
                 rows={5}
-                className={errors.description ? 'border-red-500 focus:ring-red-500' : ''}
+                className={
+                  errors.description ? 'border-red-500 focus:ring-red-500' : ''
+                }
               />
               {errors.description && (
                 <p className="text-red-600 dark:text-red-400 text-sm flex items-center gap-1.5 mt-1">
@@ -234,20 +262,31 @@ function CreateOrEditTaskPage({ taskId, mode }: Readonly<CreateOrEditTaskPagePro
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="status">
-                  Status {isEditMode && <span className="text-red-500 font-semibold">*</span>}
+                  Status{' '}
+                  {isEditMode && (
+                    <span className="text-red-500 font-semibold">*</span>
+                  )}
                 </Label>
                 <Select
                   value={status}
-                  onValueChange={(value) => setValue('status', value as TaskStatus)}
+                  onValueChange={(value) =>
+                    setValue('status', value as TaskStatus)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={TaskStatus.PENDING}>Pending</SelectItem>
-                    <SelectItem value={TaskStatus.IN_PROGRESS}>In Progress</SelectItem>
-                    <SelectItem value={TaskStatus.COMPLETED}>Completed</SelectItem>
-                    <SelectItem value={TaskStatus.CANCELLED}>Cancelled</SelectItem>
+                    <SelectItem value={TaskStatus.IN_PROGRESS}>
+                      In Progress
+                    </SelectItem>
+                    <SelectItem value={TaskStatus.COMPLETED}>
+                      Completed
+                    </SelectItem>
+                    <SelectItem value={TaskStatus.CANCELLED}>
+                      Cancelled
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.status && (
@@ -263,7 +302,10 @@ function CreateOrEditTaskPage({ taskId, mode }: Readonly<CreateOrEditTaskPagePro
                 <Select
                   value={priority || undefined}
                   onValueChange={(value) =>
-                    setValue('priority', value === 'none' ? undefined : (value as TaskPriority))
+                    setValue(
+                      'priority',
+                      value === 'none' ? undefined : (value as TaskPriority)
+                    )
                   }
                 >
                   <SelectTrigger>
@@ -286,7 +328,9 @@ function CreateOrEditTaskPage({ taskId, mode }: Readonly<CreateOrEditTaskPagePro
                 id="due_date"
                 type="datetime-local"
                 {...register('due_date')}
-                className={errors.due_date ? 'border-red-500 focus:ring-red-500' : ''}
+                className={
+                  errors.due_date ? 'border-red-500 focus:ring-red-500' : ''
+                }
               />
               {errors.due_date && (
                 <p className="text-red-600 dark:text-red-400 text-sm flex items-center gap-1.5 mt-1">
@@ -339,7 +383,6 @@ function CreateOrEditTaskPage({ taskId, mode }: Readonly<CreateOrEditTaskPagePro
       </Card>
     </div>
   );
-}
+};
 
 export default CreateOrEditTaskPage;
-

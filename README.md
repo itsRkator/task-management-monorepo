@@ -196,7 +196,8 @@ npm run migration:revert
 
 ```bash
 cd backend
-npm run migration:generate src/migrations/MigrationName
+npm run migration:generate
+# The command will prompt you to enter the migration name
 ```
 
 ## Testing

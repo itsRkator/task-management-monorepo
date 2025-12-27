@@ -8,8 +8,8 @@ export const Route = createRootRoute({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="text-xl font-bold text-slate-900 dark:text-slate-50 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200"
               >
                 Task Management
@@ -19,7 +19,8 @@ export const Route = createRootRoute({
                   to="/"
                   className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
                   activeProps={{
-                    className: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold',
+                    className:
+                      'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold',
                   }}
                 >
                   Tasks
@@ -28,7 +29,8 @@ export const Route = createRootRoute({
                   to="/tasks/new"
                   className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
                   activeProps={{
-                    className: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold',
+                    className:
+                      'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold',
                   }}
                 >
                   New Task

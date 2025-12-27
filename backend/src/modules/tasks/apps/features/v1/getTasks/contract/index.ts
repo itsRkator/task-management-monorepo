@@ -74,4 +74,3 @@ export class GetTasksResponseDto {
     totalPages: number;
   };
 }
-

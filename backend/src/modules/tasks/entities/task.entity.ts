@@ -58,4 +58,3 @@ export class Task {
   @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 }
-

@@ -2,18 +2,42 @@ import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useTaskStore } from '@/store/taskStore';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { format } from 'date-fns';
-import { Edit, Trash2, ArrowLeft, Loader2, Calendar, Flag, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import {
+  Edit,
+  Trash2,
+  ArrowLeft,
+  Loader2,
+  Calendar,
+  Flag,
+  CheckCircle2,
+  Clock,
+  XCircle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { TaskStatus, TaskPriority } from '@/lib/api';
 
-function TaskDetailPage() {
+const TaskDetailPage = () => {
   const navigate = useNavigate();
   const { taskId } = Route.useParams();
-  const { selectedTask, loading, error, fetchTaskById, deleteTask } = useTaskStore();
+  const { selectedTask, loading, error, fetchTaskById, deleteTask } =
+    useTaskStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -78,7 +102,9 @@ function TaskDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400 mb-3" />
-        <p className="text-slate-600 dark:text-slate-400 font-medium">Loading task details...</p>
+        <p className="text-slate-600 dark:text-slate-400 font-medium">
+          Loading task details...
+        </p>
       </div>
     );
   }
@@ -90,10 +116,7 @@ function TaskDetailPage() {
           <p className="font-semibold">Error</p>
           <p className="text-sm mt-1">{error}</p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => navigate({ to: '/' })}
-        >
+        <Button variant="outline" onClick={() => navigate({ to: '/' })}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Tasks
         </Button>
@@ -124,10 +147,7 @@ function TaskDetailPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Back Button */}
-      <Button
-        variant="ghost"
-        onClick={() => navigate({ to: '/' })}
-      >
+      <Button variant="ghost" onClick={() => navigate({ to: '/' })}>
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Tasks
       </Button>
@@ -142,21 +162,22 @@ function TaskDetailPage() {
               </CardTitle>
               <CardDescription className="text-sm flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Created on {format(new Date(selectedTask.created_at), 'MMMM dd, yyyy')} at {format(new Date(selectedTask.created_at), 'h:mm a')}
+                Created on{' '}
+                {format(
+                  new Date(selectedTask.created_at),
+                  'MMMM dd, yyyy'
+                )} at {format(new Date(selectedTask.created_at), 'h:mm a')}
               </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
               <Link to="/tasks/edit/$taskId" params={{ taskId }}>
-                <Button
-                  variant="edit"
-                  className="w-full sm:w-auto"
-                >
+                <Button variant="edit" className="w-full sm:w-auto">
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
                 </Button>
               </Link>
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 onClick={handleDeleteClick}
                 className="w-full sm:w-auto"
               >
@@ -175,7 +196,9 @@ function TaskDetailPage() {
             <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 border border-slate-200 dark:border-slate-800">
               <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
                 {selectedTask.description || (
-                  <span className="text-slate-400 dark:text-slate-500 italic">No description provided</span>
+                  <span className="text-slate-400 dark:text-slate-500 italic">
+                    No description provided
+                  </span>
                 )}
               </p>
             </div>
@@ -189,7 +212,9 @@ function TaskDetailPage() {
                 <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 Status
               </h3>
-              <Badge className={`${getStatusColor(selectedTask.status)} font-medium px-2.5 py-1.5 flex items-center gap-2 w-fit`}>
+              <Badge
+                className={`${getStatusColor(selectedTask.status)} font-medium px-2.5 py-1.5 flex items-center gap-2 w-fit`}
+              >
                 {getStatusIcon(selectedTask.status)}
                 {selectedTask.status.replace('_', ' ')}
               </Badge>
@@ -202,11 +227,15 @@ function TaskDetailPage() {
                 Priority
               </h3>
               {selectedTask.priority ? (
-                <Badge className={`${getPriorityColor(selectedTask.priority)} font-medium px-2.5 py-1.5 w-fit`}>
+                <Badge
+                  className={`${getPriorityColor(selectedTask.priority)} font-medium px-2.5 py-1.5 w-fit`}
+                >
                   {selectedTask.priority}
                 </Badge>
               ) : (
-                <span className="text-slate-400 dark:text-slate-500 text-sm">Not set</span>
+                <span className="text-slate-400 dark:text-slate-500 text-sm">
+                  Not set
+                </span>
               )}
             </div>
 
@@ -218,10 +247,13 @@ function TaskDetailPage() {
               </h3>
               {selectedTask.due_date ? (
                 <p className="text-slate-900 dark:text-slate-100 font-medium">
-                  {format(new Date(selectedTask.due_date), 'MMMM dd, yyyy')} at {format(new Date(selectedTask.due_date), 'h:mm a')}
+                  {format(new Date(selectedTask.due_date), 'MMMM dd, yyyy')} at{' '}
+                  {format(new Date(selectedTask.due_date), 'h:mm a')}
                 </p>
               ) : (
-                <span className="text-slate-400 dark:text-slate-500 text-sm">No due date set</span>
+                <span className="text-slate-400 dark:text-slate-500 text-sm">
+                  No due date set
+                </span>
               )}
             </div>
 
@@ -232,7 +264,8 @@ function TaskDetailPage() {
                 Last Updated
               </h3>
               <p className="text-slate-900 dark:text-slate-100 font-medium">
-                {format(new Date(selectedTask.updated_at), 'MMMM dd, yyyy')} at {format(new Date(selectedTask.updated_at), 'h:mm a')}
+                {format(new Date(selectedTask.updated_at), 'MMMM dd, yyyy')} at{' '}
+                {format(new Date(selectedTask.updated_at), 'h:mm a')}
               </p>
             </div>
           </div>
@@ -245,7 +278,8 @@ function TaskDetailPage() {
           <DialogHeader>
             <DialogTitle>Delete Task</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this task? This action cannot be undone.
+              Are you sure you want to delete this task? This action cannot be
+              undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -255,10 +289,7 @@ function TaskDetailPage() {
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteConfirm}
-            >
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
               Delete
             </Button>
           </DialogFooter>
@@ -266,8 +297,10 @@ function TaskDetailPage() {
       </Dialog>
     </div>
   );
-}
+};
 
 export const Route = createFileRoute('/tasks/$taskId')({
   component: TaskDetailPage,
 });
+
+export default TaskDetailPage;

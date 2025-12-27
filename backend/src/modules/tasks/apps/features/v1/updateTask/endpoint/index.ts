@@ -1,4 +1,4 @@
-import { Controller, Put, Param, Body, HttpStatus } from '@nestjs/common';
+import { Controller, Put, Param, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { UpdateTaskService } from '../services';
 import { UpdateTaskRequestDto, UpdateTaskResponseDto } from '../contract';
@@ -10,7 +10,12 @@ export class UpdateTaskEndpoint {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update a task' })
-  @ApiParam({ name: 'id', description: 'Task ID', type: 'string', format: 'uuid' })
+  @ApiParam({
+    name: 'id',
+    description: 'Task ID',
+    type: 'string',
+    format: 'uuid',
+  })
   @ApiResponse({
     status: 200,
     description: 'Task updated successfully',
@@ -25,4 +30,3 @@ export class UpdateTaskEndpoint {
     return this.updateTaskService.execute(id, updateTaskDto);
   }
 }
-

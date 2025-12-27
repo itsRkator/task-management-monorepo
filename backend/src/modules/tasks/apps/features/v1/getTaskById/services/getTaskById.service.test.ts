@@ -2,7 +2,11 @@ import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert';
 import { NotFoundException } from '@nestjs/common';
 import { GetTaskByIdService } from './index';
-import { Task, TaskStatus, TaskPriority } from '../../../../../entities/task.entity';
+import {
+  Task,
+  TaskStatus,
+  TaskPriority,
+} from '../../../../../entities/task.entity';
 
 describe('GetTaskByIdService', () => {
   let service: GetTaskByIdService;
@@ -53,4 +57,3 @@ describe('GetTaskByIdService', () => {
     );
   });
 });
-

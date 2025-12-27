@@ -1,10 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class RemoveTaskResponseDto {
-  @ApiProperty({ description: 'Success message', example: 'Task deleted successfully' })
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Task deleted successfully',
+  })
   message: string;
 
-  @ApiProperty({ description: 'Deleted task ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiProperty({
+    description: 'Deleted task ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   id: string;
 }
-

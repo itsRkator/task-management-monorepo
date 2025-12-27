@@ -1,4 +1,4 @@
-import { useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/card';
 import { Home, ArrowLeft, AlertCircle } from 'lucide-react';
 
-export default function NotFoundPage() {
+const NotFoundPage = () => {
   const navigate = useNavigate();
 
   return (
@@ -23,7 +23,8 @@ export default function NotFoundPage() {
             Page Not Found
           </CardTitle>
           <CardDescription className="text-base text-slate-600 dark:text-slate-400">
-            The page you're looking for doesn't exist or has been moved. Please check the URL or return to the home page.
+            The page you're looking for doesn't exist or has been moved. Please
+            check the URL or return to the home page.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
@@ -49,4 +50,10 @@ export default function NotFoundPage() {
       </Card>
     </div>
   );
-}
+};
+
+export const Route = createFileRoute('/$')({
+  component: NotFoundPage,
+});
+
+export default NotFoundPage;
