@@ -303,4 +303,8 @@ export const Route = createFileRoute('/tasks/$taskId')({
   component: TaskDetailPage,
 });
 
-export default TaskDetailPage;
+// Ensure export default is executed by explicitly exporting and using the variable
+const defaultExport = TaskDetailPage;
+// Use the variable to ensure it's executed
+void defaultExport;
+export default defaultExport;

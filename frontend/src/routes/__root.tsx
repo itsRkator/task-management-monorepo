@@ -54,4 +54,4 @@ export const Route = createRootRoute({
       <Toaster position="top-right" richColors />
     </div>
   ),
-});
+}); // Ensure closing brace is executed

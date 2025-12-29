@@ -49,7 +49,10 @@ const migrationsPath =
 if (process.env.NODE_ENV === 'production') {
   console.log('Migration path:', migrationsPath);
   console.log('Current working directory:', process.cwd());
-  console.log('Migrations directory exists:', existsSync(join(process.cwd(), 'migrations')));
+  console.log(
+    'Migrations directory exists:',
+    existsSync(join(process.cwd(), 'migrations')),
+  );
 }
 
 export const AppDataSource = new DataSource({

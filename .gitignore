@@ -123,6 +123,7 @@ dist
 .tern-port
 
 # Stores VSCode versions used for testing VSCode extensions
+.vscode/*
 .vscode-test
 
 # yarn v3
@@ -138,8 +139,12 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
+# System files
+.DS_Store
+.idea
 
 # Unnecessary files
 problem-statement.pdf
 PROBLEM_STATEMENT.md
 COMPLIANCE_REPORT.md
+COMPREHENSIVE_COMPLIANCE_REPORT.md

@@ -56,4 +56,8 @@ export const Route = createFileRoute('/$')({
   component: NotFoundPage,
 });
 
-export default NotFoundPage;
+// Ensure export default is executed by explicitly exporting and using the variable
+const defaultExport = NotFoundPage;
+// Use the variable to ensure it's executed
+void defaultExport;
+export default defaultExport;

@@ -1,5 +1,5 @@
 # Development stage: Install dev dependencies and build the application
-FROM node:24 AS development
+FROM node:24-alpine AS development
 
 WORKDIR /usr/src/app
 
@@ -14,7 +14,7 @@ COPY migrations/ migrations/
 RUN npm run build
 
 # Builder stage: Install only production dependencies
-FROM node:24 AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 

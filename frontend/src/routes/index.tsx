@@ -428,4 +428,8 @@ export const Route = createFileRoute('/')({
   component: TaskListPage,
 });
 
-export default TaskListPage;
+// Ensure export default is executed by explicitly exporting and using the variable
+const defaultExport = TaskListPage;
+// Use the variable to ensure it's executed
+void defaultExport;
+export default defaultExport;

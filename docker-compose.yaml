@@ -32,8 +32,8 @@ services:
       dockerfile: Dockerfile
       # Uncomment target below to use dev stage with dev dependencies for hot-reloading
       # target: dev
-    ports:
-      - '3000:3000'
+    # ports:
+    #   - '3000:3000'
     env_file:
       - ./backend/.env
     environment:
@@ -64,6 +64,7 @@ services:
       - ./backend/.env:/app/.env
       # Exclude node_modules from bind mount to use container's dependencies
       - /app/node_modules
+      - /app/dist
       # In dev mode, allow dist to be written to by the dev server
       # In production, exclude it: - /app/dist
     # DEV MODE: Uncomment the lines below to enable hot-reloading
@@ -109,8 +110,7 @@ services:
       - ./frontend/.env:/app/.env
       # Exclude node_modules from bind mount to use container's dependencies
       - /app/node_modules
-      # Mount dist to nginx's serving directory for development
-      - ./frontend/dist:/usr/share/nginx/html
+      - /app/dist
     depends_on:
       - backend
     healthcheck:

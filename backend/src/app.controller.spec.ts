@@ -4,19 +4,32 @@ import { AppService } from './app.service';
 
 describe('AppController', () => {
   let appController: AppController;
+  let appService: AppService;
 
   beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
       providers: [AppService],
     }).compile();
 
-    appController = app.get<AppController>(AppController);
+    appController = module.get<AppController>(AppController);
+    appService = module.get<AppService>(AppService);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('getHealth', () => {
+    it('should return health status', () => {
+      const result = { status: 'ok' };
+      jest.spyOn(appService, 'getHealth').mockReturnValue(result);
+
+      expect(appController.getHealth()).toEqual(result);
+      expect(appService.getHealth).toHaveBeenCalled();
+    });
+
+    it('should return health status with correct structure', () => {
+      const result = appController.getHealth();
+      expect(result).toHaveProperty('status');
+      expect(typeof result.status).toBe('string');
+      expect(result.status).toBe('ok');
     });
   });
 });

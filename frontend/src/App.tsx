@@ -4,6 +4,7 @@ import NotFoundPage from './routes/$';
 
 import './App.css';
 
+// Create router at module level (recommended pattern for TanStack Router)
 const router = createRouter({
   routeTree,
   notFoundMode: 'root',
