@@ -25,6 +25,7 @@ export class UpdateTaskEndpoint {
   @ApiResponse({ status: 404, description: 'Task not found' })
   async update(
     @Param('id') id: string,
+
     @Body() updateTaskDto: UpdateTaskRequestDto,
   ): Promise<UpdateTaskResponseDto> {
     return this.updateTaskService.execute(id, updateTaskDto);

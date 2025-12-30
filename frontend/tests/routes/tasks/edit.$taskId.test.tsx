@@ -25,16 +25,16 @@ vi.mock('@tanstack/react-router', async () => {
 });
 
 // Import after mocks
-import { Route } from '@/routes/tasks/edit.$taskId';
+import { Route } from '@/routes/tasks/$taskId.edit';
 // Import default export to ensure line 13 is covered
-import EditTaskPageDefault from '@/routes/tasks/edit.$taskId';
+import EditTaskPageDefault from '@/routes/tasks/$taskId.edit';
 // Import the entire module to ensure all code including export default executes
-import * as EditTaskModule from '@/routes/tasks/edit.$taskId';
+import * as EditTaskModule from '@/routes/tasks/$taskId.edit';
 
-describe('Edit Task Route (edit.$taskId)', () => {
+describe('Edit Task Route ($taskId.edit)', () => {
   it('should execute all module code - covers lines 9-13', () => {
     // This test ensures the entire module is evaluated, including:
-    // - Line 9: export const Route = createFileRoute('/tasks/edit/$taskId')({
+    // - Line 9: export const Route = createFileRoute('/tasks/$taskId/edit')({
     // - Line 10: component: EditTaskPage,
     // - Line 11: }); (closing brace)
     // - Line 13: export default EditTaskPage;
@@ -94,7 +94,7 @@ describe('Edit Task Route (edit.$taskId)', () => {
 
   it('should have default export and use it - line 13', async () => {
     // Test that default export exists and is used (line 13)
-    const module = await import('@/routes/tasks/edit.$taskId');
+    const module = await import('@/routes/tasks/$taskId.edit');
     expect(module.default).toBeDefined();
     expect(typeof module.default).toBe('function');
     // Actually use the default export to ensure line 13 is covered
@@ -107,8 +107,8 @@ describe('Edit Task Route (edit.$taskId)', () => {
 
   it('should cover default export line 13 by multiple imports', async () => {
     // Import default export multiple times to ensure line 13 is fully covered
-    const module1 = await import('@/routes/tasks/edit.$taskId');
-    const module2 = await import('@/routes/tasks/edit.$taskId');
+    const module1 = await import('@/routes/tasks/$taskId.edit');
+    const module2 = await import('@/routes/tasks/$taskId.edit');
     const Default1 = module1.default;
     const Default2 = module2.default;
     expect(Default1).toBe(Default2);
@@ -120,7 +120,7 @@ describe('Edit Task Route (edit.$taskId)', () => {
 
   it('should execute default export line 13 by direct import and usage', async () => {
     // Directly import and use default export to ensure line 13 is executed
-    const EditTaskPageDefault = (await import('@/routes/tasks/edit.$taskId')).default;
+    const EditTaskPageDefault = (await import('@/routes/tasks/$taskId.edit')).default;
     // Use it multiple times
     const Component1 = EditTaskPageDefault;
     const Component2 = EditTaskPageDefault;
@@ -130,7 +130,7 @@ describe('Edit Task Route (edit.$taskId)', () => {
     expect(screen.getByTestId('create-or-edit')).toBeInTheDocument();
     unmount();
     // Access default property again
-    const module = await import('@/routes/tasks/edit.$taskId');
+    const module = await import('@/routes/tasks/$taskId.edit');
     expect(module.default).toBe(EditTaskPageDefault);
     // Use default export one more time
     render(<module.default />);
@@ -154,7 +154,7 @@ describe('Edit Task Route (edit.$taskId)', () => {
     const Component = Route.component;
     expect(typeof Component).toBe('function');
     // Import and use default export to ensure line 13 is covered
-    const module = await import('@/routes/tasks/edit.$taskId');
+    const module = await import('@/routes/tasks/$taskId.edit');
     expect(module.default).toBeDefined();
     expect(typeof module.default).toBe('function');
   });
@@ -166,7 +166,7 @@ describe('Edit Task Route (edit.$taskId)', () => {
     expect(EditTaskPageDefault).toBeDefined();
     expect(typeof EditTaskPageDefault).toBe('function');
     // Also import dynamically to ensure full evaluation
-    const module = await import('@/routes/tasks/edit.$taskId');
+    const module = await import('@/routes/tasks/$taskId.edit');
     // Access both named and default exports
     const { Route: RouteExport } = module;
     const DefaultExport = module.default;

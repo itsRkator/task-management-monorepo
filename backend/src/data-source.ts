@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import { join } from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { Task } from './modules/tasks/entities/task.entity';
 
 // Load environment variables the same way NestJS ConfigModule does
@@ -39,20 +39,38 @@ const dbConfig = getDatabaseConfig();
 // Determine migrations path based on environment
 // In production (Docker), migrations are at /app/migrations
 // In development, migrations are at the project root (relative to src/)
-// TypeORM needs the glob pattern as a string, not a joined path
-const migrationsPath =
-  process.env.NODE_ENV === 'production'
-    ? `${join(process.cwd(), 'migrations')}/*.ts` // Absolute path with glob pattern
-    : join(__dirname, '../migrations/*.ts');
+// Function to get migration files excluding test files
+const getMigrations = (): string[] => {
+  const migrationsDir =
+    process.env.NODE_ENV === 'production'
+      ? join(process.cwd(), 'migrations')
+      : join(__dirname, '../migrations');
+
+  if (!existsSync(migrationsDir)) {
+    return [];
+  }
+
+  const files = readdirSync(migrationsDir);
+  const migrationFiles = files
+    .filter(
+      (file) =>
+        (file.endsWith('.ts') || file.endsWith('.js')) &&
+        !file.endsWith('.spec.ts') &&
+        !file.endsWith('.test.ts') &&
+        !file.endsWith('.spec.js') &&
+        !file.endsWith('.test.js'),
+    )
+    .map((file) => join(migrationsDir, file));
+
+  return migrationFiles;
+};
 
 // Log migration path for debugging (only in production/Docker)
 if (process.env.NODE_ENV === 'production') {
-  console.log('Migration path:', migrationsPath);
+  const migrationsDir = join(process.cwd(), 'migrations');
+  console.log('Migration path:', migrationsDir);
   console.log('Current working directory:', process.cwd());
-  console.log(
-    'Migrations directory exists:',
-    existsSync(join(process.cwd(), 'migrations')),
-  );
+  console.log('Migrations directory exists:', existsSync(migrationsDir));
 }
 
 export const AppDataSource = new DataSource({
@@ -62,11 +80,12 @@ export const AppDataSource = new DataSource({
   username: dbConfig.username,
   password: dbConfig.password,
   database: dbConfig.database,
-  // Use glob pattern for entities (works in both dev and prod after build)
-  entities: ['dist/**/*.entity{.ts,.js}'],
+  // Explicitly import entities to exclude test entities (e.g., TestTask from test-utils)
+  entities: [Task],
   // In production (Docker), migrations are at /app/migrations
   // In development, migrations are at the project root (relative to src/)
-  migrations: [migrationsPath],
+  // Exclude test files (.spec.ts, .test.ts, .spec.js, .test.js)
+  migrations: getMigrations(),
   synchronize: dbConfig.synchronize,
   logging: true, // Enable logging to see what migrations are found
 });

@@ -16,7 +16,7 @@ rl.question('Enter migration name: ', (migrationName) => {
   }
 
   // Using replace with global flag (replaceAll doesn't work with regex patterns)
-  const sanitizedName = migrationName.trim().replace(/[^a-zA-Z0-9]/g, '');
+  const sanitizedName = migrationName.trim().replaceAll(/[^a-zA-Z0-9]/g, '');
   if (sanitizedName === '') {
     console.error(
       'Error: Migration name must contain at least one alphanumeric character',

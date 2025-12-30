@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import CreateOrEditTaskPage from '@/components/tasks/CreateOrEdit';
+import CreateOrEditTaskPage from '@/components/tasks/create-or-edit';
 
 const EditTaskPage = () => {
   const { taskId } = Route.useParams();
@@ -9,10 +9,7 @@ const EditTaskPage = () => {
 
 export const Route = createFileRoute('/tasks/$taskId/edit')({
   component: EditTaskPage,
-}); // Ensure closing brace is executed
+});
 
 // Ensure export default is executed by explicitly exporting and using the variable
-const defaultExport = EditTaskPage;
-// Use the variable to ensure it's executed
-void defaultExport;
-export default defaultExport;
+export default EditTaskPage;

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import CreateOrEditTaskPage from '@/components/tasks/CreateOrEdit';
+import CreateOrEditTaskPage from '@/components/tasks/create-or-edit';
 import { useTaskStore } from '@/store/taskStore';
 import { TaskStatus, TaskPriority } from '@/lib/api';
 import { toast } from 'sonner';
@@ -13,31 +13,53 @@ import { z } from 'zod';
 const _createTaskSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
-  status: z.enum([TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED, TaskStatus.CANCELLED]).optional(),
-  priority: z.enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH]).optional(),
-  due_date: z.string().optional().refine(
-    (val) => {
-      if (!val) return true;
-      const date = new Date(val);
-      return !isNaN(date.getTime());
-    },
-    { message: 'Invalid date format' }
-  ),
+  status: z
+    .enum([
+      TaskStatus.PENDING,
+      TaskStatus.IN_PROGRESS,
+      TaskStatus.COMPLETED,
+      TaskStatus.CANCELLED,
+    ])
+    .optional(),
+  priority: z
+    .enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH])
+    .optional(),
+  due_date: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const date = new Date(val);
+        return !isNaN(date.getTime());
+      },
+      { message: 'Invalid date format' }
+    ),
 });
 
 const _updateTaskSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
-  status: z.enum([TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED, TaskStatus.CANCELLED]),
-  priority: z.enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH]).optional(),
-  due_date: z.string().optional().refine(
-    (val) => {
-      if (!val) return true;
-      const date = new Date(val);
-      return !isNaN(date.getTime());
-    },
-    { message: 'Invalid date format' }
-  ),
+  status: z.enum([
+    TaskStatus.PENDING,
+    TaskStatus.IN_PROGRESS,
+    TaskStatus.COMPLETED,
+    TaskStatus.CANCELLED,
+  ]),
+  priority: z
+    .enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH])
+    .optional(),
+  due_date: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const date = new Date(val);
+        return !isNaN(date.getTime());
+      },
+      { message: 'Invalid date format' }
+    ),
 });
 
 // Mock dependencies
@@ -57,17 +79,28 @@ vi.mock('@tanstack/react-router', () => ({
 // Mock Select component to capture onValueChange handler (for coverage)
 let priorityOnValueChangeHandler: ((value: string) => void) | null = null;
 vi.mock('@/components/ui/select', async () => {
-  const actual = await vi.importActual<typeof import('@/components/ui/select')>('@/components/ui/select');
+  const actual = await vi.importActual<typeof import('@/components/ui/select')>(
+    '@/components/ui/select'
+  );
   const ActualSelect = actual.Select;
   return {
     ...actual,
-    Select: ({ onValueChange, value, children, ...props }: React.ComponentProps<typeof ActualSelect>) => {
+    Select: ({
+      onValueChange,
+      value,
+      children,
+      ...props
+    }: React.ComponentProps<typeof ActualSelect>) => {
       // Store the handler for priority select (when value is undefined/null, it's likely the priority select)
       if (onValueChange && (value === undefined || value === null)) {
         priorityOnValueChangeHandler = onValueChange;
       }
       // Return the actual Select component
-      return React.createElement(ActualSelect, { onValueChange, value, ...props }, children);
+      return React.createElement(
+        ActualSelect,
+        { onValueChange, value, ...props },
+        children
+      );
     },
   };
 });
@@ -113,15 +146,21 @@ describe('CreateOrEditTaskPage', () => {
       render(<CreateOrEditTaskPage mode="create" />);
       expect(screen.getByText(/create new task/i)).toBeInTheDocument();
       // This covers the branch: isEditMode ? 'Edit Task' : 'Create New Task' (line 198) - false branch
-      expect(screen.getByText(/fill in the details below/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/fill in the details below/i)
+      ).toBeInTheDocument();
       // This covers the branch: isEditMode ? ... : 'Fill in the details below...' (line 201-203) - false branch
-      expect(screen.getByText(/provide information about/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/provide information about/i)
+      ).toBeInTheDocument();
       // This covers the branch: isEditMode ? ... : 'Provide information...' (line 213-215) - false branch
     });
 
     it('should have create button', () => {
       render(<CreateOrEditTaskPage mode="create" />);
-      expect(screen.getByRole('button', { name: /create task/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /create task/i })
+      ).toBeInTheDocument();
       // This covers the branch: isEditMode ? 'Update Task' : 'Create Task' (line 366-374) - false branch
     });
 
@@ -129,7 +168,9 @@ describe('CreateOrEditTaskPage', () => {
       render(<CreateOrEditTaskPage mode="create" />);
       // This covers the branch: loading ? ... : ... (line 359) - false branch
       // And the branch: isEditMode ? ... : 'Create Task' (line 366-374) - false branch
-      expect(screen.getByRole('button', { name: /create task/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /create task/i })
+      ).toBeInTheDocument();
     });
 
     it('should show creating text when loading', () => {
@@ -615,7 +656,7 @@ describe('CreateOrEditTaskPage', () => {
       const submitButton = screen.getByRole('button', { name: /update task/i });
       expect(submitButton).toBeInTheDocument();
       expect(submitButton).not.toBeDisabled();
-      
+
       // Click the submit button - this tests the form interaction
       await user.click(submitButton);
 
@@ -623,11 +664,11 @@ describe('CreateOrEditTaskPage', () => {
       // or the form processed the submission (which may be async)
       // We verify the core functionality: form can be filled and submitted
       expect(titleInput).toHaveValue('Updated Task');
-      
+
       // Give a moment for async operations, but don't fail if updateTask
       // isn't called immediately (form validation/submission is complex)
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // At minimum, verify the form is interactive and the button was clicked
       expect(submitButton).toBeInTheDocument();
     });
@@ -809,7 +850,7 @@ describe('CreateOrEditTaskPage', () => {
       const user = userEvent.setup();
       // Import AxiosError to create a proper error instance
       const { AxiosError } = await import('axios');
-      
+
       const axiosError = new AxiosError('Request failed');
       axiosError.response = {
         data: {
@@ -831,9 +872,12 @@ describe('CreateOrEditTaskPage', () => {
       const submitButton = screen.getByRole('button', { name: /create task/i });
       await user.click(submitButton);
 
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Custom error message');
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(toast.error).toHaveBeenCalledWith('Custom error message');
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should handle non-AxiosError in create mode', async () => {
@@ -850,9 +894,12 @@ describe('CreateOrEditTaskPage', () => {
       const submitButton = screen.getByRole('button', { name: /create task/i });
       await user.click(submitButton);
 
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Failed to create task');
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(toast.error).toHaveBeenCalledWith('Failed to create task');
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should handle non-AxiosError in edit mode', async () => {
@@ -890,9 +937,12 @@ describe('CreateOrEditTaskPage', () => {
       const submitButton = screen.getByRole('button', { name: /update task/i });
       await user.click(submitButton);
 
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Failed to update task');
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(toast.error).toHaveBeenCalledWith('Failed to update task');
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should show loading state in edit mode when task is not loaded', () => {
@@ -1080,9 +1130,12 @@ describe('CreateOrEditTaskPage', () => {
       await user.click(submitButton);
 
       // This covers the catch block (line 153) and the else branch (line 156)
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Failed to create task');
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(toast.error).toHaveBeenCalledWith('Failed to create task');
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should trigger catch block with non-AxiosError in edit mode', async () => {
@@ -1117,9 +1170,12 @@ describe('CreateOrEditTaskPage', () => {
       await user.click(submitButton);
 
       // This covers the catch block (line 153) and the else branch (line 156) for edit mode
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Failed to update task');
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(toast.error).toHaveBeenCalledWith('Failed to update task');
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should show status validation error when status is invalid', async () => {
@@ -1156,7 +1212,7 @@ describe('CreateOrEditTaskPage', () => {
     it('should trigger catch block with AxiosError without response message', async () => {
       const user = userEvent.setup();
       const { AxiosError } = await import('axios');
-      
+
       const axiosError = new AxiosError('Network error');
       axiosError.response = {
         data: {},
@@ -1177,9 +1233,12 @@ describe('CreateOrEditTaskPage', () => {
 
       // This covers the catch block (line 153) and the else branch (line 156)
       // when error.response?.data?.message is falsy
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Failed to create task');
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(toast.error).toHaveBeenCalledWith('Failed to create task');
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should handle priority value none in onValueChange', async () => {
@@ -1230,9 +1289,12 @@ describe('CreateOrEditTaskPage', () => {
       await user.click(submitButton);
 
       // This explicitly covers the catch block at line 153, specifically the else branch
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Failed to create task');
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(toast.error).toHaveBeenCalledWith('Failed to create task');
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should cover catch block line 153 with AxiosError without response message in create mode', async () => {
@@ -1251,9 +1313,12 @@ describe('CreateOrEditTaskPage', () => {
       const submitButton = screen.getByRole('button', { name: /create task/i });
       await user.click(submitButton);
 
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Failed to create task');
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(toast.error).toHaveBeenCalledWith('Failed to create task');
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should cover catch block line 153 with AxiosError without response message in edit mode', async () => {
@@ -1288,9 +1353,12 @@ describe('CreateOrEditTaskPage', () => {
       const submitButton = screen.getByRole('button', { name: /update task/i });
       await user.click(submitButton);
 
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Failed to update task');
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(toast.error).toHaveBeenCalledWith('Failed to update task');
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should execute priority handler with none value - covers line 307 true branch', async () => {
@@ -1298,22 +1366,26 @@ describe('CreateOrEditTaskPage', () => {
       // The handler at line 304-309: onValueChange={(value) => setValue('priority', value === 'none' ? undefined : (value as TaskPriority))}
       // Line 307: value === 'none' ? undefined (true branch)
       render(<CreateOrEditTaskPage mode="create" />);
-      
+
       // Wait for component to render and handler to be captured
-      await waitFor(() => {
-        expect(screen.getAllByText(/priority/i).length).toBeGreaterThan(0);
-      }, { timeout: 3000 });
-      
+      await waitFor(
+        () => {
+          expect(screen.getAllByText(/priority/i).length).toBeGreaterThan(0);
+        },
+        { timeout: 3000 }
+      );
+
       // Wait a bit more for the handler to be captured by the mock
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Call the handler directly if it was captured - this executes line 307 true branch
       if (priorityOnValueChangeHandler) {
         priorityOnValueChangeHandler('none');
       }
-      
+
       // Also test the handler logic directly to ensure the branch logic is covered
-      const handler = (value: string) => value === 'none' ? undefined : (value as TaskPriority);
+      const handler = (value: string) =>
+        value === 'none' ? undefined : (value as TaskPriority);
       expect(handler('none')).toBeUndefined();
     });
 
@@ -1322,24 +1394,28 @@ describe('CreateOrEditTaskPage', () => {
       // The handler at line 304-309: onValueChange={(value) => setValue('priority', value === 'none' ? undefined : (value as TaskPriority))}
       // Line 307: (value as TaskPriority) (false branch)
       render(<CreateOrEditTaskPage mode="create" />);
-      
+
       // Wait for component to render and handler to be captured
-      await waitFor(() => {
-        expect(screen.getAllByText(/priority/i).length).toBeGreaterThan(0);
-      }, { timeout: 3000 });
-      
+      await waitFor(
+        () => {
+          expect(screen.getAllByText(/priority/i).length).toBeGreaterThan(0);
+        },
+        { timeout: 3000 }
+      );
+
       // Wait a bit more for the handler to be captured by the mock
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Call the handler directly if it was captured - this executes line 307 false branch
       if (priorityOnValueChangeHandler) {
         priorityOnValueChangeHandler(TaskPriority.HIGH);
         priorityOnValueChangeHandler(TaskPriority.LOW);
         priorityOnValueChangeHandler(TaskPriority.MEDIUM);
       }
-      
+
       // Also test the handler logic directly to ensure the branch logic is covered
-      const handler = (value: string) => value === 'none' ? undefined : (value as TaskPriority);
+      const handler = (value: string) =>
+        value === 'none' ? undefined : (value as TaskPriority);
       expect(handler(TaskPriority.HIGH)).toBe(TaskPriority.HIGH);
       expect(handler(TaskPriority.LOW)).toBe(TaskPriority.LOW);
       expect(handler(TaskPriority.MEDIUM)).toBe(TaskPriority.MEDIUM);
@@ -1354,37 +1430,40 @@ describe('CreateOrEditTaskPage', () => {
       // We need to trigger both branches: when val is truthy (line 53) and when date is invalid (line 54)
       const user = userEvent.setup();
       render(<CreateOrEditTaskPage mode="create" />);
-      
+
       // The due_date input exists
       const dueDateInput = screen.getByLabelText(/due date/i);
       expect(dueDateInput).toBeInTheDocument();
-      
+
       // Enter an invalid date format that will trigger validation error
       // This will execute the refine function at lines 50-57, specifically lines 53-54
       // Line 52: if (!val) return true; (false branch - val is truthy)
       // Line 53: const date = new Date(val); (executes)
       // Line 54: return !isNaN(date.getTime()); (executes - returns false for invalid date)
       await user.type(dueDateInput, 'invalid-date-format');
-      
+
       // Fill in title (required field)
       const titleInput = screen.getByLabelText(/title/i);
       await user.type(titleInput, 'Test Task');
-      
+
       // Try to submit the form to trigger validation
       const submitButton = screen.getByRole('button', { name: /create task/i });
       await user.click(submitButton);
-      
+
       // Wait to see if validation error appears (lines 332, 335)
       // The refine validation at lines 53-54 will check if the date is valid
-      await waitFor(() => {
-        // The validation error should appear if due_date is invalid
-        const errorMessage = screen.queryByText(/invalid date format/i);
-        if (errorMessage) {
-          expect(errorMessage).toBeInTheDocument();
-        }
-        // At least verify the input exists with error styling (line 332)
-        expect(dueDateInput).toBeInTheDocument();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          // The validation error should appear if due_date is invalid
+          const errorMessage = screen.queryByText(/invalid date format/i);
+          if (errorMessage) {
+            expect(errorMessage).toBeInTheDocument();
+          }
+          // At least verify the input exists with error styling (line 332)
+          expect(dueDateInput).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should cover refine validation lines 53-54 with valid date - covers true branch', async () => {
@@ -1405,24 +1484,27 @@ describe('CreateOrEditTaskPage', () => {
       });
 
       render(<CreateOrEditTaskPage mode="create" />);
-      
+
       // Fill in title (required field)
       const titleInput = screen.getByLabelText(/title/i);
       await user.type(titleInput, 'Test Task');
-      
+
       // Enter a valid date format - this will execute lines 53-54 with valid date
       const dueDateInput = screen.getByLabelText(/due date/i);
       // Use a valid datetime-local format
       await user.type(dueDateInput, '2024-12-31T23:59');
-      
+
       // Submit the form - the refine validation at lines 53-54 will pass
       const submitButton = screen.getByRole('button', { name: /create task/i });
       await user.click(submitButton);
-      
+
       // Wait for successful submission
-      await waitFor(() => {
-        expect(mockCreateTask).toHaveBeenCalled();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(mockCreateTask).toHaveBeenCalled();
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should cover status error display branch - line 312', async () => {
@@ -1449,7 +1531,10 @@ describe('CreateOrEditTaskPage', () => {
       // Create a wrapper that can access the form instance
       const _formInstance: unknown = null;
       const _TestWrapper = () => {
-        const component = React.createElement(CreateOrEditTaskPage, { mode: 'edit', taskId: '123' });
+        const component = React.createElement(CreateOrEditTaskPage, {
+          mode: 'edit',
+          taskId: '123',
+        });
         return component;
       };
 
@@ -1464,7 +1549,10 @@ describe('CreateOrEditTaskPage', () => {
 
         React.useEffect(() => {
           // Set a status error to trigger line 312
-          form.setError('status', { type: 'manual', message: 'Status is required' });
+          form.setError('status', {
+            type: 'manual',
+            message: 'Status is required',
+          });
         }, [form]);
 
         return (
@@ -1482,12 +1570,15 @@ describe('CreateOrEditTaskPage', () => {
       };
 
       render(<ErrorTestComponent />);
-      
+
       // Wait for the error to appear
-      await waitFor(() => {
-        const errorMessage = screen.queryByText(/status is required/i);
-        expect(errorMessage).toBeInTheDocument();
-      }, { timeout: 2000 });
+      await waitFor(
+        () => {
+          const errorMessage = screen.queryByText(/status is required/i);
+          expect(errorMessage).toBeInTheDocument();
+        },
+        { timeout: 2000 }
+      );
     });
 
     it('should cover status error display branch - line 312 in actual component', async () => {
@@ -1522,7 +1613,7 @@ describe('CreateOrEditTaskPage', () => {
       // but we verify the conditional rendering structure exists
       const statusLabel = screen.getByText(/status/i);
       expect(statusLabel).toBeInTheDocument();
-      
+
       // The error display at line 312 is: {errors.status && (
       // This branch is covered when errors.status exists
       // Since we can't easily trigger this in the actual form, we verify the structure
@@ -1561,23 +1652,26 @@ describe('CreateOrEditTaskPage', () => {
       // Enter an invalid due_date to trigger refine validation at lines 81-82
       const dueDateInput = screen.getByLabelText(/due date/i);
       await user.type(dueDateInput, 'invalid-date-format');
-      
+
       // Fill in title to avoid title validation error
       const titleInput = screen.getByDisplayValue('Existing Task');
       await user.clear(titleInput);
       await user.type(titleInput, 'Valid Title');
-      
+
       // Try to submit - this should trigger due_date validation error (lines 81-82)
       const submitButton = screen.getByRole('button', { name: /update task/i });
       await user.click(submitButton);
 
       // Wait to see if validation error appears (lines 352-355)
-      await waitFor(() => {
-        const dueDateError = screen.queryByText(/invalid date format/i);
-        if (dueDateError) {
-          expect(dueDateError).toBeInTheDocument();
-        }
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          const dueDateError = screen.queryByText(/invalid date format/i);
+          if (dueDateError) {
+            expect(dueDateError).toBeInTheDocument();
+          }
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should cover refine validation lines 81-82 with valid date - covers true branch', async () => {
@@ -1618,15 +1712,18 @@ describe('CreateOrEditTaskPage', () => {
       const dueDateInput = screen.getByLabelText(/due date/i);
       // Use a valid datetime-local format
       await user.type(dueDateInput, '2024-12-31T23:59');
-      
+
       // Submit the form - the refine validation at lines 81-82 will pass
       const submitButton = screen.getByRole('button', { name: /update task/i });
       await user.click(submitButton);
-      
+
       // Wait for successful submission
-      await waitFor(() => {
-        expect(mockUpdateTask).toHaveBeenCalled();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(mockUpdateTask).toHaveBeenCalled();
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should cover priority none value branch by selecting none', async () => {
@@ -1661,7 +1758,7 @@ describe('CreateOrEditTaskPage', () => {
       // The due_date input exists and the error display structure is in place
       const dueDateInput = screen.getByLabelText(/due date/i);
       expect(dueDateInput).toBeInTheDocument();
-      
+
       // The component structure supports displaying due_date errors (line 335)
       // In a real scenario, when due_date validation fails, the error would be displayed
     });
@@ -1672,13 +1769,13 @@ describe('CreateOrEditTaskPage', () => {
       // Since we can't easily interact with Radix UI Select, we'll test the logic indirectly
       // by verifying the component structure and the handler setup
       render(<CreateOrEditTaskPage mode="create" />);
-      
+
       // The priority Select has onValueChange handler at line 304-309
       // When 'none' is selected, it triggers: value === 'none' ? undefined
       // The handler is set up correctly in the component
       const priorityLabels = screen.getAllByText(/priority/i);
       expect(priorityLabels.length).toBeGreaterThan(0);
-      
+
       // The 'none' option exists at line 315, and the handler logic at line 307
       // covers the true branch when value === 'none'
       // In a real scenario, selecting 'none' would call setValue('priority', undefined)
@@ -1688,13 +1785,13 @@ describe('CreateOrEditTaskPage', () => {
       // This test covers line 307 false branch: (value as TaskPriority)
       // When a priority value (not 'none') is selected, it triggers the false branch
       render(<CreateOrEditTaskPage mode="create" />);
-      
+
       // The priority Select has onValueChange handler at line 304-309
       // When a priority like 'HIGH' is selected, it triggers: (value as TaskPriority)
       // The handler is set up correctly in the component
       const priorityLabels = screen.getAllByText(/priority/i);
       expect(priorityLabels.length).toBeGreaterThan(0);
-      
+
       // The priority options exist (LOW, MEDIUM, HIGH at lines 316-318)
       // and the handler logic at line 307 covers the false branch when value !== 'none'
       // In a real scenario, selecting a priority would call setValue('priority', value as TaskPriority)
@@ -1704,20 +1801,23 @@ describe('CreateOrEditTaskPage', () => {
       // This test covers lines 270-273: error display for description field
       // Use __testErrors prop to inject description error
       render(
-        <CreateOrEditTaskPage 
-          mode="create" 
+        <CreateOrEditTaskPage
+          mode="create"
           __testErrors={{
-            description: { message: 'Description error test' }
+            description: { message: 'Description error test' },
           }}
         />
       );
-      
-      await waitFor(() => {
-        // This should display the error message, covering lines 270-273
-        const errorMessage = screen.queryByText(/description error test/i);
-        expect(errorMessage).toBeInTheDocument();
-      }, { timeout: 2000 });
-      
+
+      await waitFor(
+        () => {
+          // This should display the error message, covering lines 270-273
+          const errorMessage = screen.queryByText(/description error test/i);
+          expect(errorMessage).toBeInTheDocument();
+        },
+        { timeout: 2000 }
+      );
+
       // Verify the input has error styling (line 270)
       const descriptionInput = screen.getByLabelText(/description/i);
       expect(descriptionInput).toBeInTheDocument();
@@ -1744,11 +1844,11 @@ describe('CreateOrEditTaskPage', () => {
 
       // Use __testErrors prop to inject status error
       render(
-        <CreateOrEditTaskPage 
-          mode="edit" 
+        <CreateOrEditTaskPage
+          mode="edit"
           taskId="123"
           __testErrors={{
-            status: { message: 'Status is required' }
+            status: { message: 'Status is required' },
           }}
         />
       );
@@ -1757,35 +1857,40 @@ describe('CreateOrEditTaskPage', () => {
         expect(screen.getByDisplayValue('Existing Task')).toBeInTheDocument();
       });
 
-      await waitFor(() => {
-        // This should display the error message, covering line 312
-        const errorMessage = screen.queryByText(/status is required/i);
-        expect(errorMessage).toBeInTheDocument();
-      }, { timeout: 2000 });
+      await waitFor(
+        () => {
+          // This should display the error message, covering line 312
+          const errorMessage = screen.queryByText(/status is required/i);
+          expect(errorMessage).toBeInTheDocument();
+        },
+        { timeout: 2000 }
+      );
     });
 
     it('should display due_date error when invalid date is entered - covers lines 352-355', async () => {
       // This test covers lines 352-355: error display for due_date field
       // Use __testErrors prop to inject due_date error
       render(
-        <CreateOrEditTaskPage 
-          mode="create" 
+        <CreateOrEditTaskPage
+          mode="create"
           __testErrors={{
-            due_date: { message: 'Invalid date format' }
+            due_date: { message: 'Invalid date format' },
           }}
         />
       );
-      
-      await waitFor(() => {
-        // This should display the error message, covering lines 352-355
-        const errorMessage = screen.queryByText(/invalid date format/i);
-        expect(errorMessage).toBeInTheDocument();
-      }, { timeout: 2000 });
-      
+
+      await waitFor(
+        () => {
+          // This should display the error message, covering lines 352-355
+          const errorMessage = screen.queryByText(/invalid date format/i);
+          expect(errorMessage).toBeInTheDocument();
+        },
+        { timeout: 2000 }
+      );
+
       // Verify the input has error styling (line 352)
       const dueDateInput = screen.getByLabelText(/due date/i);
       expect(dueDateInput).toBeInTheDocument();
     });
   });
 });
-

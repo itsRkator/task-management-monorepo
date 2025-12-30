@@ -1,0 +1,23 @@
+{
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/**/node_modules/**",
+    "src/**/dist/**",
+    "src/**/coverage/**",
+    "src/**/*.config.ts",
+    "src/test-utils/**"
+  ],
+  "reporter": ["text", "html", "json", "lcov"],
+  "report-dir": "coverage",
+  "temp-dir": ".nyc_output",
+  "check-coverage": true,
+  "lines": 100,
+  "functions": 100,
+  "branches": 100,
+  "statements": 100,
+  "excludeAfterRemap": false,
+  "all": true,
+  "sourceMap": false
+}

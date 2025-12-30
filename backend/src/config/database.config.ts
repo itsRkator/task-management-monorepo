@@ -2,6 +2,8 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Task } from '../modules/tasks/entities/task.entity';
 import { Logger } from '@nestjs/common';
+import { readdirSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 export const getDatabaseConfig = (
   configService: ConfigService,
@@ -16,16 +18,34 @@ export const getDatabaseConfig = (
   Logger.log('logging', logging);
   Logger.log('migrationsRun', migrationsRun);
 
+  // Function to get migration files excluding test files
+  const getMigrations = (): string[] => {
+    const migrationsDir = join(__dirname, '../migrations');
+    if (!existsSync(migrationsDir)) {
+      return [];
+    }
+
+    const files = readdirSync(migrationsDir);
+    const migrationFiles = files
+      .filter(
+        (file) =>
+          (file.endsWith('.ts') || file.endsWith('.js')) &&
+          !file.endsWith('.spec.ts') &&
+          !file.endsWith('.test.ts') &&
+          !file.endsWith('.spec.js') &&
+          !file.endsWith('.test.js'),
+      )
+      .map((file) => join(migrationsDir, file));
+
+    return migrationFiles;
+  };
+
   return {
     type: 'postgres',
     url: connectionString,
     entities: [Task],
     synchronize: synchronize === 'true',
-    migrations: [
-      process.env.NODE_ENV === 'production'
-        ? '../migrations/*.js'
-        : '../migrations/*.ts',
-    ],
+    migrations: getMigrations(),
     migrationsRun: migrationsRun === 'production',
     logging: logging === 'true',
   };

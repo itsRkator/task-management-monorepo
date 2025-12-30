@@ -239,7 +239,7 @@ const TaskListPage = () => {
                   size="sm"
                   onClick={() =>
                     navigate({
-                      to: '/tasks/edit/$taskId',
+                      to: '/tasks/$taskId/edit',
                       params: { taskId: task.id },
                     })
                   }
@@ -428,8 +428,4 @@ export const Route = createFileRoute('/')({
   component: TaskListPage,
 });
 
-// Ensure export default is executed by explicitly exporting and using the variable
-const defaultExport = TaskListPage;
-// Use the variable to ensure it's executed
-void defaultExport;
-export default defaultExport;
+export default TaskListPage;

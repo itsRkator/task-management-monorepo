@@ -1,0 +1,138 @@
+[
+  {
+    "title": "Complete project documentation",
+    "description": "Write comprehensive documentation for the task management API, including setup instructions, API endpoints, and usage examples.",
+    "status": "IN_PROGRESS",
+    "priority": "HIGH",
+    "due_date": "2024-12-31T23:59:59Z"
+  },
+  {
+    "title": "Review pull requests",
+    "description": "Review and provide feedback on pending pull requests from the team.",
+    "status": "PENDING",
+    "priority": "MEDIUM",
+    "due_date": "2024-12-20T17:00:00Z"
+  },
+  {
+    "title": "Update dependencies",
+    "description": "Check for outdated npm packages and update them to their latest stable versions.",
+    "status": "PENDING",
+    "priority": "LOW"
+  },
+  {
+    "title": "Implement user authentication",
+    "description": "Add JWT-based authentication system with login, register, and refresh token endpoints.",
+    "status": "PENDING",
+    "priority": "HIGH",
+    "due_date": "2024-12-25T23:59:59Z"
+  },
+  {
+    "title": "Write unit tests for task service",
+    "description": "Create comprehensive unit tests covering all task CRUD operations and edge cases.",
+    "status": "IN_PROGRESS",
+    "priority": "MEDIUM",
+    "due_date": "2024-12-22T18:00:00Z"
+  },
+  {
+    "title": "Fix responsive design issues",
+    "description": "Address mobile responsiveness problems in the task list and detail views.",
+    "status": "PENDING",
+    "priority": "MEDIUM"
+  },
+  {
+    "title": "Setup CI/CD pipeline",
+    "description": "Configure GitHub Actions for automated testing and deployment.",
+    "status": "COMPLETED",
+    "priority": "HIGH"
+  },
+  {
+    "title": "Optimize database queries",
+    "description": "Review and optimize slow database queries, add necessary indexes.",
+    "status": "PENDING",
+    "priority": "MEDIUM",
+    "due_date": "2024-12-28T23:59:59Z"
+  },
+  {
+    "title": "Add task filtering and search",
+    "description": "Implement advanced filtering by status, priority, and full-text search functionality.",
+    "status": "IN_PROGRESS",
+    "priority": "HIGH",
+    "due_date": "2024-12-30T23:59:59Z"
+  },
+  {
+    "title": "Update README with new features",
+    "status": "PENDING",
+    "priority": "LOW"
+  },
+  {
+    "title": "Refactor task entity validation",
+    "description": "Improve validation logic and error messages for better user experience.",
+    "status": "PENDING",
+    "priority": "MEDIUM"
+  },
+  {
+    "title": "Add task categories",
+    "description": "Implement category system for organizing tasks into different groups.",
+    "status": "PENDING",
+    "priority": "LOW",
+    "due_date": "2025-01-15T23:59:59Z"
+  },
+  {
+    "title": "Fix memory leak in task store",
+    "status": "COMPLETED",
+    "priority": "HIGH"
+  },
+  {
+    "title": "Design new dashboard UI",
+    "description": "Create mockups and design specifications for the new task management dashboard.",
+    "status": "PENDING",
+    "priority": "MEDIUM",
+    "due_date": "2024-12-24T17:00:00Z"
+  },
+  {
+    "title": "Migrate to TypeORM 0.3",
+    "description": "Update TypeORM to version 0.3 and refactor code to use new API.",
+    "status": "CANCELLED",
+    "priority": "LOW"
+  },
+  {
+    "title": "Add email notifications",
+    "description": "Implement email notifications for task assignments, due date reminders, and status changes.",
+    "status": "PENDING",
+    "priority": "MEDIUM",
+    "due_date": "2025-01-10T23:59:59Z"
+  },
+  {
+    "title": "Create API documentation",
+    "description": "Generate Swagger/OpenAPI documentation for all endpoints.",
+    "status": "COMPLETED",
+    "priority": "HIGH"
+  },
+  {
+    "title": "Implement task comments feature",
+    "description": "Allow users to add comments to tasks for collaboration and discussion.",
+    "status": "PENDING",
+    "priority": "LOW"
+  },
+  {
+    "title": "Add dark mode support",
+    "description": "Implement dark theme toggle and persist user preference.",
+    "status": "IN_PROGRESS",
+    "priority": "LOW",
+    "due_date": "2024-12-29T23:59:59Z"
+  },
+  {
+    "title": "Performance testing",
+    "description": "Run load tests to identify bottlenecks and optimize performance.",
+    "status": "PENDING",
+    "priority": "MEDIUM"
+  },
+  {
+    "title": "Setup error monitoring",
+    "description": "Integrate Sentry or similar service for error tracking and monitoring.",
+    "status": "PENDING",
+    "priority": "HIGH",
+    "due_date": "2024-12-23T23:59:59Z"
+  }
+]
+

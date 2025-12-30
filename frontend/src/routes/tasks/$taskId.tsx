@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, Link, Outlet, useLocation } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useTaskStore } from '@/store/taskStore';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ import { TaskStatus, TaskPriority } from '@/lib/api';
 
 const TaskDetailPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { taskId } = Route.useParams();
   const { selectedTask, loading, error, fetchTaskById, deleteTask } =
     useTaskStore();
@@ -43,6 +44,11 @@ const TaskDetailPage = () => {
   useEffect(() => {
     fetchTaskById(taskId);
   }, [taskId, fetchTaskById]);
+
+  // If we're on the edit route, render the Outlet (which will show the edit form)
+  if (location.pathname.endsWith('/edit')) {
+    return <Outlet />;
+  }
 
   const handleDeleteClick = () => {
     setDeleteDialogOpen(true);
@@ -170,7 +176,7 @@ const TaskDetailPage = () => {
               </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <Link to="/tasks/edit/$taskId" params={{ taskId }}>
+              <Link to="/tasks/$taskId/edit" params={{ taskId }}>
                 <Button variant="edit" className="w-full sm:w-auto">
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
@@ -303,8 +309,4 @@ export const Route = createFileRoute('/tasks/$taskId')({
   component: TaskDetailPage,
 });
 
-// Ensure export default is executed by explicitly exporting and using the variable
-const defaultExport = TaskDetailPage;
-// Use the variable to ensure it's executed
-void defaultExport;
-export default defaultExport;
+export default TaskDetailPage;

@@ -418,14 +418,14 @@ describe('Route Module Coverage', () => {
     expect(Component).toBeDefined();
   });
 
-  it('should fully evaluate edit.$taskId route module - covers lines 9-13', async () => {
+  it('should fully evaluate $taskId.edit route module - covers lines 9-13', async () => {
     // Import the entire module to ensure all code executes
     // This ensures lines 9-13 are evaluated, including:
-    // - Line 9: export const Route = createFileRoute('/tasks/edit/$taskId')({
+    // - Line 9: export const Route = createFileRoute('/tasks/$taskId/edit')({
     // - Line 10: component: EditTaskPage,
     // - Line 11: }); (closing brace - executed when config is processed)
     // - Line 13: export default EditTaskPage; (executed when module is imported)
-    const module = await import('@/routes/tasks/edit.$taskId');
+    const module = await import('@/routes/tasks/$taskId.edit');
     
     // Access Route export multiple times (covers lines 9-11 including closing brace })
     expect(module.Route).toBeDefined();

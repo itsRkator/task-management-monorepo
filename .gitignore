@@ -142,9 +142,3 @@ vite.config.ts.timestamp-*
 # System files
 .DS_Store
 .idea
-
-# Unnecessary files
-problem-statement.pdf
-PROBLEM_STATEMENT.md
-COMPLIANCE_REPORT.md
-COMPREHENSIVE_COMPLIANCE_REPORT.md
