@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import * as React from 'react';
 
 // Mock CreateOrEdit component
-vi.mock('@/components/tasks/CreateOrEdit', () => ({
+vi.mock('@/components/tasks/create-or-edit', () => ({
   default: ({ mode }: any) => <div data-testid="create-or-edit">CreateOrEdit - {mode}</div>,
 }));
 
@@ -39,6 +40,10 @@ import { Route } from '@/routes/tasks/new';
 // Import the entire module to ensure all code including closing brace executes
 import * as NewRouteModule from '@/routes/tasks/new';
 
+// Type assertion for Route with component property (from mock)
+type RouteWithComponent = typeof Route & { component: () => React.ReactElement };
+const RouteWithComponent = Route as RouteWithComponent;
+
 describe('New Task Route', () => {
   it('should execute all module code - covers lines 4-6', () => {
     // This test ensures the entire module is evaluated, including:
@@ -48,11 +53,11 @@ describe('New Task Route', () => {
     
     // Access the Route export multiple times (covers line 4-6)
     expect(Route).toBeDefined();
-    expect(Route.component).toBeDefined();
-    expect(typeof Route.component).toBe('function');
+    expect(RouteWithComponent.component).toBeDefined();
+    expect(typeof RouteWithComponent.component).toBe('function');
     // Access Route properties to ensure the object is fully evaluated
-    const routeComponent = Route.component;
-    const routeComponent2 = Route.component;
+    const routeComponent = RouteWithComponent.component;
+    const routeComponent2 = RouteWithComponent.component;
     expect(routeComponent).toBe(routeComponent2);
     // Access Route object multiple times
     const route1 = Route;
@@ -69,17 +74,17 @@ describe('New Task Route', () => {
     expect(moduleRoute2).toBe(moduleRoute);
     
     // Render to ensure the component is functional
-    render(<Route.component />);
+    render(<RouteWithComponent.component />);
     expect(screen.getByTestId('create-or-edit')).toBeInTheDocument();
   });
 
   it('should render CreateOrEditTaskPage with create mode', () => {
     // Test Route component is defined
-    expect(Route.component).toBeDefined();
-    expect(typeof Route.component).toBe('function');
+    expect(RouteWithComponent.component).toBeDefined();
+    expect(typeof RouteWithComponent.component).toBe('function');
     
     // Render the component
-    render(<Route.component />);
+    render(<RouteWithComponent.component />);
     expect(screen.getByTestId('create-or-edit')).toBeInTheDocument();
     expect(screen.getByText('CreateOrEdit - create')).toBeInTheDocument();
   });
@@ -87,31 +92,31 @@ describe('New Task Route', () => {
   it('should have Route defined', () => {
     // Test that Route is defined (covers line 6 - closing brace)
     expect(Route).toBeDefined();
-    expect(Route.component).toBeDefined();
+    expect(RouteWithComponent.component).toBeDefined();
   });
 
   it('should test component definition', () => {
     // This covers line 6: component: () => <CreateOrEditTaskPage mode="create" />
     // The component is an arrow function that returns CreateOrEditTaskPage
-    render(<Route.component />);
+    render(<RouteWithComponent.component />);
     expect(screen.getByTestId('create-or-edit')).toBeInTheDocument();
   });
 
   it('should cover Route export closing brace - line 6', () => {
     // This covers line 6: the closing brace }); of the Route definition
     // By accessing Route and rendering, we ensure the Route object is fully constructed
-    const Component = Route.component;
+    const Component = RouteWithComponent.component;
     expect(typeof Component).toBe('function');
     render(<Component />);
     expect(screen.getByTestId('create-or-edit')).toBeInTheDocument();
     // Accessing Route ensures line 6 (closing brace) is executed
     expect(Route).toBeDefined();
-    expect(Route.component).toBeDefined();
+    expect(RouteWithComponent.component).toBeDefined();
   });
 
   it('should execute Route definition completely - covers line 6', () => {
     // This ensures line 6 (closing brace) is covered by fully constructing the Route
-    const routeConfig = Route;
+    const routeConfig = RouteWithComponent;
     expect(routeConfig).toBeDefined();
     expect(routeConfig.component).toBeDefined();
     // Render to ensure the component function is executed
@@ -123,7 +128,7 @@ describe('New Task Route', () => {
     // This test ensures line 6 (closing brace) is covered by executing the full call chain
     // createFileRoute('/tasks/new')({ component: ... })
     // Access the component property to ensure the config object is fully processed
-    const Component = Route.component;
+    const Component = RouteWithComponent.component;
     expect(typeof Component).toBe('function');
     // Render the component to ensure the Route is fully constructed and line 6 is executed
     render(<Component />);
@@ -135,10 +140,10 @@ describe('New Task Route', () => {
     // the entire Route definition is executed, including the closing });
     // The Route is already defined from the import, so we verify it's complete
     expect(Route).toBeDefined();
-    expect(Route.component).toBeDefined();
+    expect(RouteWithComponent.component).toBeDefined();
     // Access Route properties multiple times to ensure full execution
-    const Component1 = Route.component;
-    const Component2 = Route.component;
+    const Component1 = RouteWithComponent.component;
+    const Component2 = RouteWithComponent.component;
     expect(Component1).toBe(Component2);
     // Render component to ensure all code paths are executed
     render(<Component1 />);
@@ -150,16 +155,16 @@ describe('New Task Route', () => {
     const Route1 = Route;
     const Route2 = Route;
     expect(Route1).toBe(Route2);
-    expect(Route1.component).toBe(Route2.component);
+    expect((Route1 as RouteWithComponent).component).toBe((Route2 as RouteWithComponent).component);
     // Access component property multiple times
-    const Component1 = Route.component;
-    const Component2 = Route.component;
+    const Component1 = RouteWithComponent.component;
+    const Component2 = RouteWithComponent.component;
     expect(Component1).toBe(Component2);
     // Render to ensure everything is executed
     render(<Component1 />);
     expect(screen.getByTestId('create-or-edit')).toBeInTheDocument();
     // Access Route again to ensure line 6 (closing brace) is covered
-    expect(typeof Route.component).toBe('function');
+    expect(typeof RouteWithComponent.component).toBe('function');
     // Import and use Route again
     const routeConfig = Route;
     expect(routeConfig).toBeDefined();
@@ -168,7 +173,7 @@ describe('New Task Route', () => {
   it('should fully execute Route definition - covers line 6 closing brace', () => {
     // This test ensures the entire Route definition including closing brace (line 6) is executed
     // Access Route object and all its properties
-    const routeConfig = Route;
+    const routeConfig = RouteWithComponent;
     expect(routeConfig).toBeDefined();
     expect(routeConfig.component).toBeDefined();
     // Access component multiple times
@@ -181,9 +186,9 @@ describe('New Task Route', () => {
     unmount1();
     // Access Route again in different ways
     expect(Route).toBeDefined();
-    expect(Route.component).toBeDefined();
+    expect(RouteWithComponent.component).toBeDefined();
     // Ensure the closing brace at line 6 is part of executed code
-    const finalRoute = Route;
+    const finalRoute = RouteWithComponent;
     expect(finalRoute).toBe(routeConfig);
     // Call component function to ensure everything is executed
     const Component = finalRoute.component;
@@ -199,9 +204,10 @@ describe('New Task Route', () => {
     // Access Route export
     const { Route: RouteExport } = module;
     expect(RouteExport).toBeDefined();
-    expect(RouteExport.component).toBeDefined();
+    const RouteExportWithComponent = RouteExport as RouteWithComponent;
+    expect(RouteExportWithComponent.component).toBeDefined();
     // Access all properties to ensure full object evaluation
-    const Component = RouteExport.component;
+    const Component = RouteExportWithComponent.component;
     expect(typeof Component).toBe('function');
     // Render to ensure everything is executed
     render(<Component />);

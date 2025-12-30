@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
 // Mock CreateOrEdit component first
-vi.mock('@/components/tasks/CreateOrEdit', () => ({
+vi.mock('@/components/tasks/create-or-edit', () => ({
   default: ({ mode, taskId }: any) => (
     <div data-testid="create-or-edit">
       CreateOrEdit - {mode} - {taskId}

@@ -23,6 +23,8 @@ const mockNavigate = vi.fn();
 vi.mock('@tanstack/react-router', async () => {
   const actual = await vi.importActual('@tanstack/react-router');
   const mockUseParams = vi.fn(() => ({ taskId: '123' }));
+  const mockUseLocation = vi.fn(() => ({ pathname: '/tasks/123' }));
+  const React = await import('react');
   return {
     ...actual,
     createFileRoute: vi.fn((_path: string) => {
@@ -45,8 +47,10 @@ vi.mock('@tanstack/react-router', async () => {
       };
     }),
     useNavigate: () => mockNavigate,
+    useLocation: mockUseLocation,
     useParams: mockUseParams,
     Link: ({ children, to, params: _params }: { children: React.ReactNode; to: string; params?: unknown }) => <a href={to}>{children}</a>,
+    Outlet: () => React.createElement('div', { 'data-testid': 'outlet' }, 'Outlet'),
   };
 });
 

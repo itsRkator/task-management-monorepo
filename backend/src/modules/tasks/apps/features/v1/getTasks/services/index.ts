@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
-import { Task } from '../../../../../entities/task.entity';
+import { Repository, Like, FindOperator } from 'typeorm';
+import {
+  Task,
+  TaskPriority,
+  TaskStatus,
+} from '../../../../../entities/task.entity';
 import {
   GetTasksQueryDto,
   GetTasksResponseDto,
@@ -20,7 +24,35 @@ export class GetTasksService {
     const limit = query.limit || 10;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: {
+      status?: TaskStatus;
+      priority?: TaskPriority;
+      title?: FindOperator<string>;
+      description?: FindOperator<string>;
+      due_date?: FindOperator<Date>;
+      created_at?: FindOperator<Date>;
+      updated_at?: FindOperator<Date>;
+      id?: FindOperator<string>;
+      order?: {
+        created_at?: 'ASC' | 'DESC';
+        updated_at?: 'ASC' | 'DESC';
+        due_date?: 'ASC' | 'DESC';
+        priority?: 'ASC' | 'DESC';
+        status?: 'ASC' | 'DESC';
+      };
+      limit?: number;
+      skip?: number;
+      page?: number;
+      total?: number;
+      totalPages?: number;
+      data?: TaskItemDto[];
+      meta?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+    } = {};
 
     if (query.status) {
       where.status = query.status;
