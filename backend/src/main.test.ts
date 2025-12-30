@@ -199,10 +199,8 @@ describe('main.ts bootstrap function', () => {
   });
 
   test('should cover all import statement branches in main.ts', async () => {
-    // Mock NestFactory before requiring main.ts to prevent actual bootstrap
-    const createStubBefore = sinon
-      .stub(NestFactory, 'create')
-      .resolves(mockApp);
+    // Don't create a new stub - use the one from beforeEach
+    // Just ensure the existing stub is set up correctly
     const createDocumentSpy = sinon
       .stub(SwaggerModule, 'createDocument')
       .returns({} as any);
@@ -229,7 +227,306 @@ describe('main.ts bootstrap function', () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     // Clean up
-    createStubBefore.restore();
+    createDocumentSpy.restore();
+    setupSpy.restore();
+  });
+
+  test('should cover FRONTEND_URL branch when set (line 20)', async () => {
+    const originalFrontendUrl = process.env.FRONTEND_URL;
+    process.env.FRONTEND_URL = 'https://example.com';
+
+    // Create a fresh mockApp for this test
+    const testMockApp = {
+      useGlobalPipes: sinon.stub().returnsThis(),
+      enableCors: sinon.stub().returnsThis(),
+      setGlobalPrefix: sinon.stub().returnsThis(),
+      listen: sinon.stub().resolves(undefined),
+      close: sinon.stub().resolves(undefined),
+      getHttpAdapter: sinon.stub().returns({
+        getType: sinon.stub().returns('express'),
+      }),
+    };
+
+    // Set up all stubs FIRST
+    const createDocumentSpy = sinon
+      .stub(SwaggerModule, 'createDocument')
+      .returns({} as any);
+    const setupSpy = sinon.stub(SwaggerModule, 'setup').returns(undefined);
+
+    // Restore existing stub and create new one that resolves immediately
+    createStub.restore();
+    const testCreateStub = sinon
+      .stub(NestFactory, 'create')
+      .resolves(testMockApp as any);
+
+    // Clear ALL related module caches
+    const mainModulePath = require.resolve('./main');
+    const appModulePath = require.resolve('./app.module');
+    delete require.cache[mainModulePath];
+    delete require.cache[appModulePath];
+    // Clear any cached imports
+    Object.keys(require.cache).forEach((key) => {
+      if (key.includes('main') || key.includes('app.module')) {
+        delete require.cache[key];
+      }
+    });
+
+    // Use require instead of import to ensure immediate execution
+    require('./main');
+    
+    // Wait for async bootstrap to complete
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    // Verify the stub was called (bootstrap executed)
+    assert.ok(
+      testCreateStub.called,
+      'NestFactory.create should be called during bootstrap',
+    );
+    // Verify enableCors was called (the branch with FRONTEND_URL set)
+    assert.ok(
+      testMockApp.enableCors.called,
+      'enableCors should be called during bootstrap',
+    );
+    // Verify the CORS was called with the set FRONTEND_URL
+    assert.ok(
+      testMockApp.enableCors.calledWith({
+        origin: 'https://example.com',
+        credentials: true,
+      }),
+      'enableCors should be called with FRONTEND_URL value',
+    );
+
+    // Restore
+    if (originalFrontendUrl) {
+      process.env.FRONTEND_URL = originalFrontendUrl;
+    } else {
+      delete process.env.FRONTEND_URL;
+    }
+    testCreateStub.restore();
+    createDocumentSpy.restore();
+    setupSpy.restore();
+  });
+
+  test('should cover FRONTEND_URL branch when not set (line 20)', async () => {
+    const originalFrontendUrl = process.env.FRONTEND_URL;
+    delete process.env.FRONTEND_URL;
+
+    // Create a fresh mockApp for this test
+    const testMockApp = {
+      useGlobalPipes: sinon.stub().returnsThis(),
+      enableCors: sinon.stub().returnsThis(),
+      setGlobalPrefix: sinon.stub().returnsThis(),
+      listen: sinon.stub().resolves(undefined),
+      close: sinon.stub().resolves(undefined),
+      getHttpAdapter: sinon.stub().returns({
+        getType: sinon.stub().returns('express'),
+      }),
+    };
+
+    // Set up all stubs FIRST
+    const createDocumentSpy = sinon
+      .stub(SwaggerModule, 'createDocument')
+      .returns({} as any);
+    const setupSpy = sinon.stub(SwaggerModule, 'setup').returns(undefined);
+
+    // Restore existing stub and create new one that resolves immediately
+    createStub.restore();
+    const testCreateStub = sinon
+      .stub(NestFactory, 'create')
+      .resolves(testMockApp as any);
+
+    // Clear ALL related module caches
+    const mainModulePath = require.resolve('./main');
+    const appModulePath = require.resolve('./app.module');
+    delete require.cache[mainModulePath];
+    delete require.cache[appModulePath];
+    // Clear any cached imports
+    Object.keys(require.cache).forEach((key) => {
+      if (key.includes('main') || key.includes('app.module')) {
+        delete require.cache[key];
+      }
+    });
+
+    // Use require instead of import to ensure immediate execution
+    require('./main');
+    
+    // Wait for async bootstrap to complete
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    // Verify the stub was called (bootstrap executed)
+    assert.ok(
+      testCreateStub.called,
+      'NestFactory.create should be called during bootstrap',
+    );
+    // Verify enableCors was called (the branch with default value)
+    assert.ok(
+      testMockApp.enableCors.called,
+      'enableCors should be called during bootstrap',
+    );
+    // Verify the CORS was called with the default value
+    assert.ok(
+      testMockApp.enableCors.calledWith({
+        origin: 'http://localhost:5173',
+        credentials: true,
+      }),
+      'enableCors should be called with default FRONTEND_URL value',
+    );
+
+    // Restore
+    if (originalFrontendUrl) {
+      process.env.FRONTEND_URL = originalFrontendUrl;
+    }
+    testCreateStub.restore();
+    createDocumentSpy.restore();
+    setupSpy.restore();
+  });
+
+  test('should cover PORT branch when set (line 37)', async () => {
+    const originalPort = process.env.PORT;
+    process.env.PORT = '8080';
+
+    // Create a fresh mockApp for this test
+    const testMockApp = {
+      useGlobalPipes: sinon.stub().returnsThis(),
+      enableCors: sinon.stub().returnsThis(),
+      setGlobalPrefix: sinon.stub().returnsThis(),
+      listen: sinon.stub().resolves(undefined),
+      close: sinon.stub().resolves(undefined),
+      getHttpAdapter: sinon.stub().returns({
+        getType: sinon.stub().returns('express'),
+      }),
+    };
+
+    // Set up all stubs FIRST
+    const createDocumentSpy = sinon
+      .stub(SwaggerModule, 'createDocument')
+      .returns({} as any);
+    const setupSpy = sinon.stub(SwaggerModule, 'setup').returns(undefined);
+
+    // Restore existing stub and create new one that resolves immediately
+    createStub.restore();
+    const testCreateStub = sinon
+      .stub(NestFactory, 'create')
+      .resolves(testMockApp as any);
+
+    // Clear ALL related module caches
+    const mainModulePath = require.resolve('./main');
+    const appModulePath = require.resolve('./app.module');
+    delete require.cache[mainModulePath];
+    delete require.cache[appModulePath];
+    // Clear any cached imports
+    Object.keys(require.cache).forEach((key) => {
+      if (key.includes('main') || key.includes('app.module')) {
+        delete require.cache[key];
+      }
+    });
+
+    // Use require instead of import to ensure immediate execution
+    require('./main');
+    
+    // Wait for async bootstrap to complete
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    // Verify the stub was called (bootstrap executed)
+    assert.ok(
+      testCreateStub.called,
+      'NestFactory.create should be called during bootstrap',
+    );
+    // Verify listen was called with the PORT value
+    assert.ok(
+      testMockApp.listen.called,
+      'listen should be called during bootstrap',
+    );
+    assert.strictEqual(
+      testMockApp.listen.firstCall.args[0],
+      '8080',
+      'listen should be called with PORT value',
+    );
+
+    // Restore
+    if (originalPort) {
+      process.env.PORT = originalPort;
+    } else {
+      delete process.env.PORT;
+    }
+    testCreateStub.restore();
+    createDocumentSpy.restore();
+    setupSpy.restore();
+  });
+
+  test('should cover PORT branch when not set (line 37)', async () => {
+    const originalPort = process.env.PORT;
+    // Ensure PORT is truly undefined, not just deleted
+    delete process.env.PORT;
+    // Double-check it's undefined
+    if (process.env.PORT !== undefined) {
+      process.env.PORT = undefined as any;
+    }
+
+    // Create a fresh mockApp for this test
+    const testMockApp = {
+      useGlobalPipes: sinon.stub().returnsThis(),
+      enableCors: sinon.stub().returnsThis(),
+      setGlobalPrefix: sinon.stub().returnsThis(),
+      listen: sinon.stub().resolves(undefined),
+      close: sinon.stub().resolves(undefined),
+      getHttpAdapter: sinon.stub().returns({
+        getType: sinon.stub().returns('express'),
+      }),
+    };
+
+    // Set up all stubs FIRST
+    const createDocumentSpy = sinon
+      .stub(SwaggerModule, 'createDocument')
+      .returns({} as any);
+    const setupSpy = sinon.stub(SwaggerModule, 'setup').returns(undefined);
+
+    // Restore existing stub and create new one that resolves immediately
+    createStub.restore();
+    const testCreateStub = sinon
+      .stub(NestFactory, 'create')
+      .resolves(testMockApp as any);
+
+    // Clear ALL related module caches
+    const mainModulePath = require.resolve('./main');
+    const appModulePath = require.resolve('./app.module');
+    delete require.cache[mainModulePath];
+    delete require.cache[appModulePath];
+    // Clear any cached imports
+    Object.keys(require.cache).forEach((key) => {
+      if (key.includes('main') || key.includes('app.module')) {
+        delete require.cache[key];
+      }
+    });
+
+    // Use require instead of import to ensure immediate execution
+    require('./main');
+    
+    // Wait for async bootstrap to complete
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    // Verify the stub was called (bootstrap executed)
+    assert.ok(
+      testCreateStub.called,
+      'NestFactory.create should be called during bootstrap',
+    );
+    // Verify listen was called with default value 3000
+    assert.ok(
+      testMockApp.listen.called,
+      'listen should be called during bootstrap',
+    );
+    // The PORT can be a string or number, so check both
+    const listenArg = testMockApp.listen.firstCall.args[0];
+    assert.ok(
+      listenArg === 3000 || listenArg === '3000',
+      `listen should be called with default value 3000, got ${listenArg}`,
+    );
+
+    // Restore
+    if (originalPort) {
+      process.env.PORT = originalPort;
+    }
+    testCreateStub.restore();
     createDocumentSpy.restore();
     setupSpy.restore();
   });

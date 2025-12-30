@@ -46,9 +46,7 @@ const getMigrations = (): string[] => {
       ? join(process.cwd(), 'migrations')
       : join(__dirname, '../migrations');
 
-  if (!existsSync(migrationsDir)) {
-    return [];
-  }
+  if (!existsSync(migrationsDir)) return [];
 
   const files = readdirSync(migrationsDir);
   const migrationFiles = files

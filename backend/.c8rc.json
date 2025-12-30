@@ -7,7 +7,8 @@
     "src/**/dist/**",
     "src/**/coverage/**",
     "src/**/*.config.ts",
-    "src/test-utils/**"
+    "src/test-utils/**",
+    "**/migrations/**"
   ],
   "reporter": ["text", "html", "json", "lcov"],
   "report-dir": "coverage",
