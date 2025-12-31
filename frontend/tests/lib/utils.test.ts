@@ -9,7 +9,8 @@ describe('cn utility function', () => {
 
   it('should handle conditional classes', () => {
     // Test with false condition (constant binary expression is intentional for testing)
-    const result = cn('foo', 'bar', 'baz');
+    const condition = false;
+    const result = cn('foo', condition && 'bar', 'baz');
     expect(result).toBe('foo baz');
   });
 

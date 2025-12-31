@@ -2,6 +2,18 @@ import '@testing-library/jest-dom';
 import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+
+// Ensure coverage/.tmp directory exists for v8 coverage provider
+// The v8 provider should create this automatically, but there's a bug
+// where it fails if the directory doesn't exist
+try {
+  const coverageTmpDir = join(process.cwd(), 'coverage', '.tmp');
+  mkdirSync(coverageTmpDir, { recursive: true });
+} catch {
+  // Ignore errors if directory already exists or can't be created
+}
 
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
@@ -47,4 +59,3 @@ global.ResizeObserver = class ResizeObserver {
 
 // Mock scrollIntoView
 Element.prototype.scrollIntoView = vi.fn();
-
