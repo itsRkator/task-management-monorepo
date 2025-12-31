@@ -2,12 +2,12 @@ import { validate } from 'class-validator';
 import { CreateTaskRequestDto, CreateTaskResponseDto } from './index';
 import { TaskStatus, TaskPriority } from '../../../../../entities/task.entity';
 
-describe('CreateTaskRequestDto', () => {
-  it('should be defined', () => {
+void describe('CreateTaskRequestDto', () => {
+  void it('should be defined', () => {
     expect(CreateTaskRequestDto).toBeDefined();
   });
 
-  it('should pass validation with valid data', async () => {
+  void it('should pass validation with valid data', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'Test Task';
     dto.description = 'Test Description';
@@ -19,7 +19,7 @@ describe('CreateTaskRequestDto', () => {
     expect(errors.length).toBe(0);
   });
 
-  it('should fail validation when title is empty', async () => {
+  void it('should fail validation when title is empty', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = '';
 
@@ -28,22 +28,22 @@ describe('CreateTaskRequestDto', () => {
     expect(errors[0].property).toBe('title');
   });
 
-  it('should fail validation when title is not provided', async () => {
+  void it('should fail validation when title is not provided', async () => {
     const dto = new CreateTaskRequestDto();
 
     const errors = await validate(dto);
     expect(errors.length).toBeGreaterThan(0);
   });
 
-  it('should fail validation when title is not a string', async () => {
+  void it('should fail validation when title is not a string', async () => {
     const dto = new CreateTaskRequestDto();
-    (dto as any).title = 123;
+    (dto as unknown as { title: number }).title = 123;
 
     const errors = await validate(dto);
     expect(errors.length).toBeGreaterThan(0);
   });
 
-  it('should fail validation when title exceeds max length', async () => {
+  void it('should fail validation when title exceeds max length', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'a'.repeat(256);
 
@@ -52,7 +52,7 @@ describe('CreateTaskRequestDto', () => {
     expect(errors.some((e) => e.property === 'title')).toBe(true);
   });
 
-  it('should pass validation when title is exactly 255 characters', async () => {
+  void it('should pass validation when title is exactly 255 characters', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'a'.repeat(255);
 
@@ -60,7 +60,7 @@ describe('CreateTaskRequestDto', () => {
     expect(errors.length).toBe(0);
   });
 
-  it('should pass validation with optional description', async () => {
+  void it('should pass validation with optional description', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'Test Task';
 
@@ -68,7 +68,7 @@ describe('CreateTaskRequestDto', () => {
     expect(errors.length).toBe(0);
   });
 
-  it('should pass validation when description is provided', async () => {
+  void it('should pass validation when description is provided', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'Test Task';
     dto.description = 'Test Description';
@@ -77,16 +77,16 @@ describe('CreateTaskRequestDto', () => {
     expect(errors.length).toBe(0);
   });
 
-  it('should fail validation when description is not a string', async () => {
+  void it('should fail validation when description is not a string', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'Test Task';
-    (dto as any).description = 123;
+    (dto as unknown as { description: number }).description = 123;
 
     const errors = await validate(dto);
     expect(errors.length).toBeGreaterThan(0);
   });
 
-  it('should pass validation with optional status', async () => {
+  void it('should pass validation with optional status', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'Test Task';
 
@@ -94,7 +94,7 @@ describe('CreateTaskRequestDto', () => {
     expect(errors.length).toBe(0);
   });
 
-  it('should pass validation with valid status enum', async () => {
+  void it('should pass validation with valid status enum', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'Test Task';
     dto.status = TaskStatus.PENDING;
@@ -103,16 +103,16 @@ describe('CreateTaskRequestDto', () => {
     expect(errors.length).toBe(0);
   });
 
-  it('should fail validation with invalid status', async () => {
+  void it('should fail validation with invalid status', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'Test Task';
-    (dto as any).status = 'INVALID_STATUS';
+    (dto as unknown as { status: string }).status = 'INVALID_STATUS';
 
     const errors = await validate(dto);
     expect(errors.length).toBeGreaterThan(0);
   });
 
-  it('should pass validation with optional priority', async () => {
+  void it('should pass validation with optional priority', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'Test Task';
 
@@ -120,7 +120,7 @@ describe('CreateTaskRequestDto', () => {
     expect(errors.length).toBe(0);
   });
 
-  it('should pass validation with valid priority enum', async () => {
+  void it('should pass validation with valid priority enum', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'Test Task';
     dto.priority = TaskPriority.HIGH;
@@ -129,16 +129,16 @@ describe('CreateTaskRequestDto', () => {
     expect(errors.length).toBe(0);
   });
 
-  it('should fail validation with invalid priority', async () => {
+  void it('should fail validation with invalid priority', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'Test Task';
-    (dto as any).priority = 'INVALID_PRIORITY';
+    (dto as unknown as { priority: string }).priority = 'INVALID_PRIORITY';
 
     const errors = await validate(dto);
     expect(errors.length).toBeGreaterThan(0);
   });
 
-  it('should pass validation with optional due_date', async () => {
+  void it('should pass validation with optional due_date', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'Test Task';
 
@@ -146,7 +146,7 @@ describe('CreateTaskRequestDto', () => {
     expect(errors.length).toBe(0);
   });
 
-  it('should pass validation with valid ISO date string', async () => {
+  void it('should pass validation with valid ISO date string', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'Test Task';
     dto.due_date = '2024-12-31T23:59:59Z';
@@ -155,7 +155,7 @@ describe('CreateTaskRequestDto', () => {
     expect(errors.length).toBe(0);
   });
 
-  it('should fail validation with invalid date string', async () => {
+  void it('should fail validation with invalid date string', async () => {
     const dto = new CreateTaskRequestDto();
     dto.title = 'Test Task';
     dto.due_date = 'invalid-date';
@@ -165,12 +165,12 @@ describe('CreateTaskRequestDto', () => {
   });
 });
 
-describe('CreateTaskResponseDto', () => {
-  it('should be defined', () => {
+void describe('CreateTaskResponseDto', () => {
+  void it('should be defined', () => {
     expect(CreateTaskResponseDto).toBeDefined();
   });
 
-  it('should allow creating response object', () => {
+  void it('should allow creating response object', () => {
     const response = new CreateTaskResponseDto();
     response.id = '123';
     response.title = 'Test';

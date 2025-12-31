@@ -9,15 +9,14 @@ import { RemoveTaskService } from '../services';
 import { RemoveTaskResponseDto } from '../contract';
 import { Task } from '../../../../../entities/task.entity';
 
-describe('RemoveTaskEndpoint', () => {
+void describe('RemoveTaskEndpoint', () => {
   let controller: RemoveTaskEndpoint;
   let module: TestingModule;
-  let service: RemoveTaskService;
   let mockService: {
     execute: sinon.SinonStub;
   };
 
-  beforeEach(async () => {
+  void beforeEach(async () => {
     mockService = {
       execute: sinon.stub(),
     };
@@ -36,27 +35,27 @@ describe('RemoveTaskEndpoint', () => {
       ],
     }).compile();
 
-    service = module.get<RemoveTaskService>(RemoveTaskService);
     controller = module.get<RemoveTaskEndpoint>(RemoveTaskEndpoint);
 
     // Manually inject service if not injected (workaround for NestJS DI issue)
-    if (!(controller as any).removeTaskService) {
-      (controller as any).removeTaskService = mockService;
+    const controllerAny = controller as Record<string, unknown>;
+    if (!controllerAny.removeTaskService) {
+      controllerAny.removeTaskService = mockService;
     }
   });
 
-  afterEach(async () => {
+  void afterEach(async () => {
     if (module) {
       await module.close();
     }
     sinon.restore();
   });
 
-  test('should be defined', () => {
+  void test('should be defined', () => {
     assert.ok(controller);
   });
 
-  test('should remove a task successfully', async () => {
+  void test('should remove a task successfully', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const responseDto: RemoveTaskResponseDto = {
       message: 'Task deleted successfully',
@@ -72,7 +71,7 @@ describe('RemoveTaskEndpoint', () => {
     assert.strictEqual(mockService.execute.callCount, 1);
   });
 
-  test('should handle NotFoundException when task does not exist', async () => {
+  void test('should handle NotFoundException when task does not exist', async () => {
     const taskId = 'non-existent-id';
 
     const error = new NotFoundException(`Task with ID ${taskId} not found`);
@@ -88,7 +87,7 @@ describe('RemoveTaskEndpoint', () => {
     assert.ok(mockService.execute.calledWith(taskId));
   });
 
-  test('should handle service errors', async () => {
+  void test('should handle service errors', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
 
     const error = new Error('Service error');
@@ -104,7 +103,7 @@ describe('RemoveTaskEndpoint', () => {
     assert.ok(mockService.execute.calledWith(taskId));
   });
 
-  test('should handle database errors', async () => {
+  void test('should handle database errors', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
 
     const error = new Error('Database connection failed');
@@ -119,7 +118,7 @@ describe('RemoveTaskEndpoint', () => {
     );
   });
 
-  test('should handle invalid UUID format', async () => {
+  void test('should handle invalid UUID format', async () => {
     const taskId = 'invalid-uuid';
 
     const error = new NotFoundException(`Task with ID ${taskId} not found`);

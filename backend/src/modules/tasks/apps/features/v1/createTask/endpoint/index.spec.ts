@@ -4,11 +4,11 @@ import { CreateTaskService } from '../services';
 import { CreateTaskRequestDto, CreateTaskResponseDto } from '../contract';
 import { TaskStatus, TaskPriority } from '../../../../../entities/task.entity';
 
-describe('CreateTaskEndpoint', () => {
+void describe('CreateTaskEndpoint', () => {
   let controller: CreateTaskEndpoint;
   let service: CreateTaskService;
 
-  beforeEach(async () => {
+  void beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CreateTaskEndpoint],
       providers: [
@@ -25,7 +25,7 @@ describe('CreateTaskEndpoint', () => {
     service = module.get<CreateTaskService>(CreateTaskService);
   });
 
-  it('should be defined', () => {
+  void it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
@@ -53,10 +53,11 @@ describe('CreateTaskEndpoint', () => {
       jest.spyOn(service, 'execute').mockResolvedValue(responseDto);
 
       const result = await controller.create(requestDto);
+      const executeSpy = jest.spyOn(service, 'execute');
 
       expect(result).toEqual(responseDto);
-      expect(service.execute).toHaveBeenCalledWith(requestDto);
-      expect(service.execute).toHaveBeenCalledTimes(1);
+      expect(executeSpy).toHaveBeenCalledWith(requestDto);
+      expect(executeSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should create a task with minimal data', async () => {
@@ -75,12 +76,15 @@ describe('CreateTaskEndpoint', () => {
         updated_at: new Date(),
       };
 
-      jest.spyOn(service, 'execute').mockResolvedValue(responseDto);
+      const executeSpy = jest
+        .spyOn(service, 'execute')
+        .mockResolvedValue(responseDto);
 
       const result = await controller.create(requestDto);
 
       expect(result).toEqual(responseDto);
-      expect(service.execute).toHaveBeenCalledWith(requestDto);
+      expect(executeSpy).toHaveBeenCalledWith(requestDto);
+      expect(executeSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should handle service errors', async () => {
@@ -89,10 +93,93 @@ describe('CreateTaskEndpoint', () => {
       };
 
       const error = new Error('Service error');
-      jest.spyOn(service, 'execute').mockRejectedValue(error);
+      const executeSpy = jest.spyOn(service, 'execute');
+      executeSpy.mockRejectedValue(error);
 
       await expect(controller.create(requestDto)).rejects.toThrow(error);
-      expect(service.execute).toHaveBeenCalledWith(requestDto);
+      expect(executeSpy).toHaveBeenCalledWith(requestDto);
+    });
+
+    it('should handle database errors', async () => {
+      const requestDto: CreateTaskRequestDto = {
+        title: 'Test Task',
+      };
+
+      const error = new Error('Database connection failed');
+      const executeSpy = jest.spyOn(service, 'execute');
+      executeSpy.mockRejectedValue(error);
+
+      await expect(controller.create(requestDto)).rejects.toThrow(error);
+      expect(executeSpy).toHaveBeenCalledWith(requestDto);
+    });
+
+    it('should handle all status enum values', async () => {
+      const statuses = [
+        TaskStatus.PENDING,
+        TaskStatus.IN_PROGRESS,
+        TaskStatus.COMPLETED,
+        TaskStatus.CANCELLED,
+      ];
+
+      for (const status of statuses) {
+        const requestDto: CreateTaskRequestDto = {
+          title: 'Test Task',
+          status,
+        };
+
+        const responseDto: CreateTaskResponseDto = {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          title: 'Test Task',
+          description: null,
+          status,
+          priority: null,
+          due_date: null,
+          created_at: new Date(),
+          updated_at: new Date(),
+        };
+
+        const executeSpy = jest.spyOn(service, 'execute');
+        executeSpy.mockResolvedValue(responseDto);
+
+        const result = await controller.create(requestDto);
+        expect(result.status).toBe(status);
+        expect(executeSpy).toHaveBeenCalledWith(requestDto);
+        executeSpy.mockClear();
+      }
+    });
+
+    it('should handle all priority enum values', async () => {
+      const priorities = [
+        TaskPriority.LOW,
+        TaskPriority.MEDIUM,
+        TaskPriority.HIGH,
+      ];
+
+      for (const priority of priorities) {
+        const requestDto: CreateTaskRequestDto = {
+          title: 'Test Task',
+          priority,
+        };
+
+        const responseDto: CreateTaskResponseDto = {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          title: 'Test Task',
+          description: null,
+          status: TaskStatus.PENDING,
+          priority,
+          due_date: null,
+          created_at: new Date(),
+          updated_at: new Date(),
+        };
+
+        const executeSpy = jest.spyOn(service, 'execute');
+        executeSpy.mockResolvedValue(responseDto);
+
+        const result = await controller.create(requestDto);
+        expect(result.priority).toBe(priority);
+        expect(executeSpy).toHaveBeenCalledWith(requestDto);
+        executeSpy.mockClear();
+      }
     });
   });
 });

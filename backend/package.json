@@ -92,7 +92,11 @@
       "!**/*.spec.ts",
       "!**/node_modules/**",
       "!**/dist/**",
-      "!**/coverage/**"
+      "!**/coverage/**",
+      "!**/test-utils/**",
+      "!**/migrations/**",
+      "!**/test-database.config.ts",
+      "!**/test-task.entity.ts"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"

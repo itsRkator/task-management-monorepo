@@ -13,8 +13,8 @@ config({ path: join(__dirname, '../.env') });
 
 // Helper to parse boolean from environment variable (same logic as database.config.ts)
 // Environment variables are strings, so 'false' is truthy
-const parseBoolean = (
-  value: string | undefined,
+export const parseBoolean = (
+  value: string | undefined | null,
   defaultValue: boolean,
 ): boolean => {
   if (value === undefined || value === null) {
@@ -24,7 +24,7 @@ const parseBoolean = (
 };
 
 // Get configuration values using the same defaults as database.config.ts
-const getDatabaseConfig = () => ({
+export const getDatabaseConfig = () => ({
   host: process.env.DB_HOST ?? 'localhost',
   port: Number.parseInt(process.env.DB_PORT ?? '5432', 10),
   username: process.env.DB_USERNAME ?? 'postgres',
@@ -40,15 +40,25 @@ const dbConfig = getDatabaseConfig();
 // In production (Docker), migrations are at /app/migrations
 // In development, migrations are at the project root (relative to src/)
 // Function to get migration files excluding test files
-const getMigrations = (): string[] => {
+// Extracted file system operations for testability
+export const checkDirectoryExists = (path: string): boolean => {
+  return existsSync(path);
+};
+
+export const readDirectory = (path: string): string[] => {
+  return readdirSync(path);
+};
+
+export const getMigrations = (customDir?: string): string[] => {
   const migrationsDir =
-    process.env.NODE_ENV === 'production'
+    customDir ??
+    (process.env.NODE_ENV === 'production'
       ? join(process.cwd(), 'migrations')
-      : join(__dirname, '../migrations');
+      : join(__dirname, '../migrations'));
 
-  if (!existsSync(migrationsDir)) return [];
+  if (!checkDirectoryExists(migrationsDir)) return [];
 
-  const files = readdirSync(migrationsDir);
+  const files = readDirectory(migrationsDir);
   const migrationFiles = files
     .filter(
       (file) =>

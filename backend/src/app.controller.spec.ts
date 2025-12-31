@@ -19,10 +19,12 @@ describe('AppController', () => {
   describe('getHealth', () => {
     it('should return health status', () => {
       const result = { status: 'ok' };
-      jest.spyOn(appService, 'getHealth').mockReturnValue(result);
+      const getHealthSpy = jest
+        .spyOn(appService, 'getHealth')
+        .mockReturnValue(result);
 
       expect(appController.getHealth()).toEqual(result);
-      expect(appService.getHealth).toHaveBeenCalled();
+      expect(getHealthSpy).toHaveBeenCalled();
     });
 
     it('should return health status with correct structure', () => {

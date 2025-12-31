@@ -13,15 +13,14 @@ import {
   Task,
 } from '../../../../../entities/task.entity';
 
-describe('UpdateTaskEndpoint', () => {
+void describe('UpdateTaskEndpoint', () => {
   let controller: UpdateTaskEndpoint;
   let module: TestingModule;
-  let service: UpdateTaskService;
   let mockService: {
     execute: sinon.SinonStub;
   };
 
-  beforeEach(async () => {
+  void beforeEach(async () => {
     mockService = {
       execute: sinon.stub(),
     };
@@ -40,27 +39,27 @@ describe('UpdateTaskEndpoint', () => {
       ],
     }).compile();
 
-    service = module.get<UpdateTaskService>(UpdateTaskService);
     controller = module.get<UpdateTaskEndpoint>(UpdateTaskEndpoint);
 
     // Manually inject service if not injected (workaround for NestJS DI issue)
-    if (!(controller as any).updateTaskService) {
-      (controller as any).updateTaskService = mockService;
+    const controllerAny = controller as Record<string, unknown>;
+    if (!controllerAny.updateTaskService) {
+      controllerAny.updateTaskService = mockService;
     }
   });
 
-  afterEach(async () => {
+  void afterEach(async () => {
     if (module) {
       await module.close();
     }
     sinon.restore();
   });
 
-  test('should be defined', () => {
+  void test('should be defined', () => {
     assert.ok(controller);
   });
 
-  test('should update a task successfully with all fields', async () => {
+  void test('should update a task successfully with all fields', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const requestDto: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -90,7 +89,7 @@ describe('UpdateTaskEndpoint', () => {
     assert.strictEqual(mockService.execute.callCount, 1);
   });
 
-  test('should update a task with minimal data', async () => {
+  void test('should update a task with minimal data', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const requestDto: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -116,7 +115,7 @@ describe('UpdateTaskEndpoint', () => {
     assert.ok(mockService.execute.calledWith(taskId, requestDto));
   });
 
-  test('should handle NotFoundException when task does not exist', async () => {
+  void test('should handle NotFoundException when task does not exist', async () => {
     const taskId = 'non-existent-id';
     const requestDto: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -136,7 +135,7 @@ describe('UpdateTaskEndpoint', () => {
     assert.ok(mockService.execute.calledWith(taskId, requestDto));
   });
 
-  test('should handle service errors', async () => {
+  void test('should handle service errors', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const requestDto: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -156,7 +155,7 @@ describe('UpdateTaskEndpoint', () => {
     assert.ok(mockService.execute.calledWith(taskId, requestDto));
   });
 
-  test('should handle database errors', async () => {
+  void test('should handle database errors', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const requestDto: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -175,7 +174,7 @@ describe('UpdateTaskEndpoint', () => {
     );
   });
 
-  test('should handle all status enum values', async () => {
+  void test('should handle all status enum values', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const statuses = [
       TaskStatus.PENDING,
@@ -208,7 +207,7 @@ describe('UpdateTaskEndpoint', () => {
     }
   });
 
-  test('should handle invalid UUID format', async () => {
+  void test('should handle invalid UUID format', async () => {
     const taskId = 'invalid-uuid';
     const requestDto: UpdateTaskRequestDto = {
       title: 'Updated Task',

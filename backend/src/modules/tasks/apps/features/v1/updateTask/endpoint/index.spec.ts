@@ -4,11 +4,11 @@ import { UpdateTaskService } from '../services';
 import { UpdateTaskRequestDto, UpdateTaskResponseDto } from '../contract';
 import { TaskStatus, TaskPriority } from '../../../../../entities/task.entity';
 
-describe('UpdateTaskEndpoint', () => {
+void describe('UpdateTaskEndpoint', () => {
   let controller: UpdateTaskEndpoint;
   let service: UpdateTaskService;
 
-  beforeEach(async () => {
+  void beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UpdateTaskEndpoint],
       providers: [
@@ -25,7 +25,7 @@ describe('UpdateTaskEndpoint', () => {
     service = module.get<UpdateTaskService>(UpdateTaskService);
   });
 
-  it('should be defined', () => {
+  void it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
@@ -56,8 +56,9 @@ describe('UpdateTaskEndpoint', () => {
       const result = await controller.update(taskId, requestDto);
 
       expect(result).toEqual(responseDto);
-      expect(service.execute).toHaveBeenCalledWith(taskId, requestDto);
-      expect(service.execute).toHaveBeenCalledTimes(1);
+      const executeSpy = jest.spyOn(service, 'execute');
+      expect(executeSpy).toHaveBeenCalledWith(taskId, requestDto);
+      expect(executeSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should update a task with minimal data', async () => {
@@ -83,7 +84,8 @@ describe('UpdateTaskEndpoint', () => {
       const result = await controller.update(taskId, requestDto);
 
       expect(result).toEqual(responseDto);
-      expect(service.execute).toHaveBeenCalledWith(taskId, requestDto);
+      const executeSpy = jest.spyOn(service, 'execute');
+      expect(executeSpy).toHaveBeenCalledWith(taskId, requestDto);
     });
 
     it('should handle NotFoundException when task does not exist', async () => {
@@ -94,12 +96,13 @@ describe('UpdateTaskEndpoint', () => {
       };
 
       const error = new Error('Task not found');
-      jest.spyOn(service, 'execute').mockRejectedValue(error);
+      const executeSpy = jest.spyOn(service, 'execute');
+      executeSpy.mockRejectedValue(error);
 
       await expect(controller.update(taskId, requestDto)).rejects.toThrow(
         error,
       );
-      expect(service.execute).toHaveBeenCalledWith(taskId, requestDto);
+      expect(executeSpy).toHaveBeenCalledWith(taskId, requestDto);
     });
 
     it('should handle service errors', async () => {
@@ -110,12 +113,13 @@ describe('UpdateTaskEndpoint', () => {
       };
 
       const error = new Error('Service error');
-      jest.spyOn(service, 'execute').mockRejectedValue(error);
+      const executeSpy = jest.spyOn(service, 'execute');
+      executeSpy.mockRejectedValue(error);
 
       await expect(controller.update(taskId, requestDto)).rejects.toThrow(
         error,
       );
-      expect(service.execute).toHaveBeenCalledWith(taskId, requestDto);
+      expect(executeSpy).toHaveBeenCalledWith(taskId, requestDto);
     });
   });
 });

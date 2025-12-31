@@ -25,20 +25,41 @@ const mockSwaggerModule = {
   setup: jest.fn().mockReturnValue(undefined),
 };
 
-const mockValidationPipe = jest.fn().mockImplementation((options) => ({
-  ...options,
-  whitelist: options.whitelist,
-  forbidNonWhitelisted: options.forbidNonWhitelisted,
-  transform: options.transform,
-}));
+const mockValidationPipe = jest.fn().mockImplementation(
+  (options: {
+    whitelist?: boolean;
+    forbidNonWhitelisted?: boolean;
+    transform?: boolean;
+  }): {
+    whitelist?: boolean;
+    forbidNonWhitelisted?: boolean;
+    transform?: boolean;
+  } => {
+    const result: {
+      whitelist?: boolean;
+      forbidNonWhitelisted?: boolean;
+      transform?: boolean;
+    } = {
+      whitelist: options.whitelist,
+      forbidNonWhitelisted: options.forbidNonWhitelisted,
+      transform: options.transform,
+    };
 
-jest.mock('@nestjs/core', () => ({
-  NestFactory: mockNestFactory,
-}));
+    return result;
+  },
+);
 
-jest.mock('@nestjs/common', () => ({
-  ValidationPipe: mockValidationPipe,
-}));
+jest.mock('@nestjs/core', () => {
+  return {
+    NestFactory: mockNestFactory,
+  };
+});
+
+jest.mock('@nestjs/common', () => {
+  return {
+    ValidationPipe: mockValidationPipe,
+  };
+});
 
 jest.mock('@nestjs/swagger', () => ({
   SwaggerModule: mockSwaggerModule,

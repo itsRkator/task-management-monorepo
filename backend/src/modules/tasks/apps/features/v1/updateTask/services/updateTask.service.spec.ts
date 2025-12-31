@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { UpdateTaskService } from './index';
 import {
@@ -10,16 +9,15 @@ import {
 } from '../../../../../entities/task.entity';
 import { UpdateTaskRequestDto } from '../contract';
 
-describe('UpdateTaskService', () => {
+void describe('UpdateTaskService', () => {
   let service: UpdateTaskService;
-  let repository: Repository<Task>;
 
   const mockRepository = {
     findOne: jest.fn(),
     save: jest.fn(),
   };
 
-  beforeEach(async () => {
+  void beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UpdateTaskService,
@@ -31,18 +29,17 @@ describe('UpdateTaskService', () => {
     }).compile();
 
     service = module.get<UpdateTaskService>(UpdateTaskService);
-    repository = module.get<Repository<Task>>(getRepositoryToken(Task));
   });
 
-  afterEach(() => {
+  void afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
+  void it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  it('should update a task successfully with all fields', async () => {
+  void it('should update a task successfully with all fields', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const request: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -89,7 +86,7 @@ describe('UpdateTaskService', () => {
     expect(mockRepository.save).toHaveBeenCalled();
   });
 
-  it('should throw NotFoundException when task does not exist', async () => {
+  void it('should throw NotFoundException when task does not exist', async () => {
     const taskId = 'non-existent-id';
     const request: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -110,7 +107,7 @@ describe('UpdateTaskService', () => {
     expect(mockRepository.save).not.toHaveBeenCalled();
   });
 
-  it('should handle description as null when not provided', async () => {
+  void it('should handle description as null when not provided', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const request: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -143,7 +140,7 @@ describe('UpdateTaskService', () => {
     expect(result.description).toBeNull();
   });
 
-  it('should handle description when provided', async () => {
+  void it('should handle description when provided', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const request: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -177,7 +174,7 @@ describe('UpdateTaskService', () => {
     expect(result.description).toBe('Updated Description');
   });
 
-  it('should handle priority as null when not provided', async () => {
+  void it('should handle priority as null when not provided', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const request: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -209,7 +206,7 @@ describe('UpdateTaskService', () => {
     expect(result.priority).toBeNull();
   });
 
-  it('should handle priority when provided', async () => {
+  void it('should handle priority when provided', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const request: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -242,7 +239,7 @@ describe('UpdateTaskService', () => {
     expect(result.priority).toBe(TaskPriority.HIGH);
   });
 
-  it('should handle due_date as null when not provided', async () => {
+  void it('should handle due_date as null when not provided', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const request: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -274,7 +271,7 @@ describe('UpdateTaskService', () => {
     expect(result.due_date).toBeNull();
   });
 
-  it('should handle due_date when provided', async () => {
+  void it('should handle due_date when provided', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const request: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -308,7 +305,7 @@ describe('UpdateTaskService', () => {
     expect(result.due_date?.getTime()).toBe(dueDate.getTime());
   });
 
-  it('should handle empty string description as null', async () => {
+  void it('should handle empty string description as null', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const request: UpdateTaskRequestDto = {
       title: 'Updated Task',
@@ -342,7 +339,7 @@ describe('UpdateTaskService', () => {
     expect(result.description).toBeNull();
   });
 
-  it('should preserve created_at when updating', async () => {
+  void it('should preserve created_at when updating', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const request: UpdateTaskRequestDto = {
       title: 'Updated Task',

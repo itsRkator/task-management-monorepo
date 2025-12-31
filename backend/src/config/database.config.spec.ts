@@ -1,12 +1,24 @@
 import { ConfigService } from '@nestjs/config';
 import { getDatabaseConfig } from './database.config';
 import { Task } from '../modules/tasks/entities/task.entity';
+import * as fs from 'node:fs';
 
 describe('database.config', () => {
   let configService: ConfigService;
+  let readdirSyncSpy: jest.SpyInstance;
+  let existsSyncSpy: jest.SpyInstance;
 
   beforeEach(() => {
     configService = new ConfigService();
+    readdirSyncSpy = jest.spyOn(fs, 'readdirSync');
+    existsSyncSpy = jest.spyOn(fs, 'existsSync');
+    // Default: migrations directory exists with empty array
+    existsSyncSpy.mockReturnValue(true);
+    readdirSyncSpy.mockReturnValue([] as any);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('getDatabaseConfig', () => {
@@ -15,7 +27,10 @@ describe('database.config', () => {
 
       expect(config).toBeDefined();
       expect(config.type).toBe('postgres');
-      const configAny = config as any;
+      const configAny = config as unknown as {
+        url?: string;
+        logging?: boolean;
+      };
       expect(configAny.url).toContain('postgresql://');
       expect(config.entities).toContain(Task);
       expect(config.synchronize).toBe(false);
@@ -24,7 +39,7 @@ describe('database.config', () => {
 
     it('should use default values when env vars are not set', () => {
       const config = getDatabaseConfig(configService);
-      const configAny = config as any;
+      const configAny = config as unknown as { url?: string };
 
       expect(configAny.url).toContain('postgres');
       expect(configAny.url).toContain('localhost');
@@ -42,7 +57,10 @@ describe('database.config', () => {
       process.env.DB_LOGGING = 'true';
 
       const config = getDatabaseConfig(configService);
-      const configAny = config as any;
+      const configAny = config as unknown as {
+        url?: string;
+        logging?: boolean;
+      };
 
       expect(configAny.url).toContain('custom_user');
       expect(configAny.url).toContain('custom_pass');
@@ -72,7 +90,7 @@ describe('database.config', () => {
     it('should handle logging as false when env var is "false"', () => {
       process.env.DB_LOGGING = 'false';
       const config = getDatabaseConfig(configService);
-      const configAny = config as any;
+      const configAny = config as unknown as { logging?: boolean };
       expect(configAny.logging).toBe(false);
       delete process.env.DB_LOGGING;
     });
@@ -110,6 +128,121 @@ describe('database.config', () => {
     it('should include Task entity in entities array', () => {
       const config = getDatabaseConfig(configService);
       expect(config.entities).toContain(Task);
+    });
+
+    it('should return empty array when migrations directory does not exist', () => {
+      existsSyncSpy.mockReturnValue(false);
+      const config = getDatabaseConfig(configService);
+      expect(config.migrations).toEqual([]);
+      expect(readdirSyncSpy).not.toHaveBeenCalled();
+    });
+
+    it('should include .ts migration files', () => {
+      readdirSyncSpy.mockReturnValue([
+        '1767093773020-initial.ts',
+        'other-file.txt',
+      ] as any);
+      const config = getDatabaseConfig(configService);
+      const migrations = config.migrations as string[] | undefined;
+      expect(migrations).toBeDefined();
+      expect(migrations!).toHaveLength(1);
+      expect(migrations![0]).toContain('1767093773020-initial.ts');
+      expect(readdirSyncSpy).toHaveBeenCalled();
+    });
+
+    it('should include .js migration files', () => {
+      readdirSyncSpy.mockReturnValue([
+        '1767093773020-initial.js',
+        'other-file.txt',
+      ] as any);
+      const config = getDatabaseConfig(configService);
+      const migrations = config.migrations as string[] | undefined;
+      expect(migrations).toBeDefined();
+      expect(migrations!).toHaveLength(1);
+      expect(migrations![0]).toContain('1767093773020-initial.js');
+    });
+
+    it('should exclude .spec.ts files', () => {
+      readdirSyncSpy.mockReturnValue([
+        '1767093773020-initial.ts',
+        '1767093773020-initial.spec.ts',
+      ] as any);
+      const config = getDatabaseConfig(configService);
+      const migrations = config.migrations as string[] | undefined;
+      expect(migrations).toBeDefined();
+      expect(migrations!).toHaveLength(1);
+      expect(migrations![0]).toContain('1767093773020-initial.ts');
+      expect(migrations![0]).not.toContain('spec');
+    });
+
+    it('should exclude .test.ts files', () => {
+      readdirSyncSpy.mockReturnValue([
+        '1767093773020-initial.ts',
+        '1767093773020-initial.test.ts',
+      ] as any);
+      const config = getDatabaseConfig(configService);
+      const migrations = config.migrations as string[] | undefined;
+      expect(migrations).toBeDefined();
+      expect(migrations!).toHaveLength(1);
+      expect(migrations![0]).toContain('1767093773020-initial.ts');
+      expect(migrations![0]).not.toContain('test');
+    });
+
+    it('should exclude .spec.js files', () => {
+      readdirSyncSpy.mockReturnValue([
+        '1767093773020-initial.js',
+        '1767093773020-initial.spec.js',
+      ] as any);
+      const config = getDatabaseConfig(configService);
+      const migrations = config.migrations as string[] | undefined;
+      expect(migrations).toBeDefined();
+      expect(migrations!).toHaveLength(1);
+      expect(migrations![0]).toContain('1767093773020-initial.js');
+      expect(migrations![0]).not.toContain('spec');
+    });
+
+    it('should exclude .test.js files', () => {
+      readdirSyncSpy.mockReturnValue([
+        '1767093773020-initial.js',
+        '1767093773020-initial.test.js',
+      ] as any);
+      const config = getDatabaseConfig(configService);
+      const migrations = config.migrations as string[] | undefined;
+      expect(migrations).toBeDefined();
+      expect(migrations!).toHaveLength(1);
+      expect(migrations![0]).toContain('1767093773020-initial.js');
+      expect(migrations![0]).not.toContain('test');
+    });
+
+    it('should include both .ts and .js migration files', () => {
+      readdirSyncSpy.mockReturnValue([
+        '1767093773020-initial.ts',
+        '1767093773021-second.js',
+      ] as any);
+      const config = getDatabaseConfig(configService);
+      const migrations = config.migrations as string[] | undefined;
+      expect(migrations).toBeDefined();
+      expect(migrations!).toHaveLength(2);
+      expect(migrations![0]).toContain('1767093773020-initial.ts');
+      expect(migrations![1]).toContain('1767093773021-second.js');
+    });
+
+    it('should filter out all test files and include only valid migrations', () => {
+      readdirSyncSpy.mockReturnValue([
+        '1767093773020-initial.ts',
+        '1767093773021-second.js',
+        '1767093773020-initial.spec.ts',
+        '1767093773020-initial.test.ts',
+        '1767093773021-second.spec.js',
+        '1767093773021-second.test.js',
+        'other-file.txt',
+      ] as any);
+      const config = getDatabaseConfig(configService);
+      const migrations = config.migrations as string[] | undefined;
+      expect(migrations).toBeDefined();
+      expect(migrations!).toHaveLength(2);
+      expect(migrations![0]).toContain('1767093773020-initial.ts');
+      expect(migrations![1]).toContain('1767093773021-second.js');
     });
   });
 });

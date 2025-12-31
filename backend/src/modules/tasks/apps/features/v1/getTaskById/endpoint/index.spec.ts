@@ -4,11 +4,11 @@ import { GetTaskByIdService } from '../services';
 import { GetTaskByIdResponseDto } from '../contract';
 import { TaskStatus, TaskPriority } from '../../../../../entities/task.entity';
 
-describe('GetTaskByIdEndpoint', () => {
+void describe('GetTaskByIdEndpoint', () => {
   let controller: GetTaskByIdEndpoint;
   let service: GetTaskByIdService;
 
-  beforeEach(async () => {
+  void beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [GetTaskByIdEndpoint],
       providers: [
@@ -25,7 +25,7 @@ describe('GetTaskByIdEndpoint', () => {
     service = module.get<GetTaskByIdService>(GetTaskByIdService);
   });
 
-  it('should be defined', () => {
+  void it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
@@ -48,28 +48,31 @@ describe('GetTaskByIdEndpoint', () => {
       const result = await controller.getById(taskId);
 
       expect(result).toEqual(responseDto);
-      expect(service.execute).toHaveBeenCalledWith(taskId);
-      expect(service.execute).toHaveBeenCalledTimes(1);
+      const executeSpy = jest.spyOn(service, 'execute');
+      expect(executeSpy).toHaveBeenCalledWith(taskId);
+      expect(executeSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should handle NotFoundException when task does not exist', async () => {
       const taskId = 'non-existent-id';
 
       const error = new Error('Task not found');
-      jest.spyOn(service, 'execute').mockRejectedValue(error);
+      const executeSpy = jest.spyOn(service, 'execute');
+      executeSpy.mockRejectedValue(error);
 
       await expect(controller.getById(taskId)).rejects.toThrow(error);
-      expect(service.execute).toHaveBeenCalledWith(taskId);
+      expect(executeSpy).toHaveBeenCalledWith(taskId);
     });
 
     it('should handle service errors', async () => {
       const taskId = '123e4567-e89b-12d3-a456-426614174000';
 
       const error = new Error('Service error');
-      jest.spyOn(service, 'execute').mockRejectedValue(error);
+      const executeSpy = jest.spyOn(service, 'execute');
+      executeSpy.mockRejectedValue(error);
 
       await expect(controller.getById(taskId)).rejects.toThrow(error);
-      expect(service.execute).toHaveBeenCalledWith(taskId);
+      expect(executeSpy).toHaveBeenCalledWith(taskId);
     });
   });
 });

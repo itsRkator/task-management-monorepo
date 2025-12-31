@@ -1,4 +1,4 @@
-import { Controller, Delete, Param, HttpStatus } from '@nestjs/common';
+import { Controller, Delete, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { RemoveTaskService } from '../services';
 import { RemoveTaskResponseDto } from '../contract';

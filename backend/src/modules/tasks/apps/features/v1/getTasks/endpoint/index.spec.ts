@@ -4,11 +4,11 @@ import { GetTasksService } from '../services';
 import { GetTasksQueryDto, GetTasksResponseDto } from '../contract';
 import { TaskStatus, TaskPriority } from '../../../../../entities/task.entity';
 
-describe('GetTasksEndpoint', () => {
+void describe('GetTasksEndpoint', () => {
   let controller: GetTasksEndpoint;
   let service: GetTasksService;
 
-  beforeEach(async () => {
+  void beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [GetTasksEndpoint],
       providers: [
@@ -25,7 +25,7 @@ describe('GetTasksEndpoint', () => {
     service = module.get<GetTasksService>(GetTasksService);
   });
 
-  it('should be defined', () => {
+  void it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
@@ -42,13 +42,15 @@ describe('GetTasksEndpoint', () => {
         },
       };
 
-      jest.spyOn(service, 'execute').mockResolvedValue(responseDto);
+      const executeSpy = jest
+        .spyOn(service, 'execute')
+        .mockResolvedValue(responseDto);
 
       const result = await controller.getTasks(query);
 
       expect(result).toEqual(responseDto);
-      expect(service.execute).toHaveBeenCalledWith(query);
-      expect(service.execute).toHaveBeenCalledTimes(1);
+      expect(executeSpy).toHaveBeenCalledWith(query);
+      expect(executeSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should get tasks with pagination', async () => {
@@ -78,12 +80,14 @@ describe('GetTasksEndpoint', () => {
         },
       };
 
-      jest.spyOn(service, 'execute').mockResolvedValue(responseDto);
+      const executeSpy = jest
+        .spyOn(service, 'execute')
+        .mockResolvedValue(responseDto);
 
       const result = await controller.getTasks(query);
 
       expect(result).toEqual(responseDto);
-      expect(service.execute).toHaveBeenCalledWith(query);
+      expect(executeSpy).toHaveBeenCalledWith(query);
     });
 
     it('should get tasks with status filter', async () => {
@@ -101,12 +105,14 @@ describe('GetTasksEndpoint', () => {
         },
       };
 
-      jest.spyOn(service, 'execute').mockResolvedValue(responseDto);
+      const executeSpy = jest
+        .spyOn(service, 'execute')
+        .mockResolvedValue(responseDto);
 
       const result = await controller.getTasks(query);
 
       expect(result).toEqual(responseDto);
-      expect(service.execute).toHaveBeenCalledWith(query);
+      expect(executeSpy).toHaveBeenCalledWith(query);
     });
 
     it('should get tasks with priority filter', async () => {
@@ -124,12 +130,14 @@ describe('GetTasksEndpoint', () => {
         },
       };
 
-      jest.spyOn(service, 'execute').mockResolvedValue(responseDto);
+      const executeSpy = jest
+        .spyOn(service, 'execute')
+        .mockResolvedValue(responseDto);
 
       const result = await controller.getTasks(query);
 
       expect(result).toEqual(responseDto);
-      expect(service.execute).toHaveBeenCalledWith(query);
+      expect(executeSpy).toHaveBeenCalledWith(query);
     });
 
     it('should get tasks with search query', async () => {
@@ -147,22 +155,26 @@ describe('GetTasksEndpoint', () => {
         },
       };
 
-      jest.spyOn(service, 'execute').mockResolvedValue(responseDto);
+      const executeSpy = jest
+        .spyOn(service, 'execute')
+        .mockResolvedValue(responseDto);
 
       const result = await controller.getTasks(query);
 
       expect(result).toEqual(responseDto);
-      expect(service.execute).toHaveBeenCalledWith(query);
+      expect(executeSpy).toHaveBeenCalledWith(query);
     });
 
     it('should handle service errors', async () => {
       const query: GetTasksQueryDto = {};
 
       const error = new Error('Service error');
-      jest.spyOn(service, 'execute').mockRejectedValue(error);
+      const executeSpy = jest
+        .spyOn(service, 'execute')
+        .mockRejectedValue(error);
 
       await expect(controller.getTasks(query)).rejects.toThrow(error);
-      expect(service.execute).toHaveBeenCalledWith(query);
+      expect(executeSpy).toHaveBeenCalledWith(query);
     });
   });
 });

@@ -12,14 +12,14 @@ import {
   Task,
 } from '../../../../../entities/task.entity';
 
-describe('CreateTaskEndpoint', () => {
+void describe('CreateTaskEndpoint', () => {
   let controller: CreateTaskEndpoint;
   let module: TestingModule;
   let mockService: {
     execute: sinon.SinonStub;
   };
 
-  beforeEach(async () => {
+  void beforeEach(async () => {
     mockService = {
       execute: sinon.stub(),
     };
@@ -41,23 +41,26 @@ describe('CreateTaskEndpoint', () => {
     controller = module.get<CreateTaskEndpoint>(CreateTaskEndpoint);
 
     // Manually inject service if not injected (workaround for NestJS DI issue)
-    if (!(controller as any).createTaskService) {
-      (controller as any).createTaskService = mockService;
+    const controllerAny = controller as unknown as {
+      createTaskService?: typeof mockService;
+    };
+    if (!controllerAny.createTaskService) {
+      controllerAny.createTaskService = mockService;
     }
   });
 
-  afterEach(async () => {
+  void afterEach(async () => {
     if (module) {
       await module.close();
     }
     sinon.restore();
   });
 
-  test('should be defined', () => {
+  void test('should be defined', () => {
     assert.ok(controller);
   });
 
-  test('should create a task successfully with all fields', async () => {
+  void test('should create a task successfully with all fields', async () => {
     const requestDto: CreateTaskRequestDto = {
       title: 'Test Task',
       description: 'Test Description',
@@ -86,7 +89,7 @@ describe('CreateTaskEndpoint', () => {
     sinon.assert.calledOnce(mockService.execute);
   });
 
-  test('should create a task with minimal data', async () => {
+  void test('should create a task with minimal data', async () => {
     const requestDto: CreateTaskRequestDto = {
       title: 'Test Task',
     };
@@ -110,7 +113,7 @@ describe('CreateTaskEndpoint', () => {
     sinon.assert.calledWith(mockService.execute, requestDto);
   });
 
-  test('should handle service errors', async () => {
+  void test('should handle service errors', async () => {
     const requestDto: CreateTaskRequestDto = {
       title: 'Test Task',
     };
@@ -128,7 +131,7 @@ describe('CreateTaskEndpoint', () => {
     sinon.assert.calledWith(mockService.execute, requestDto);
   });
 
-  test('should handle database errors', async () => {
+  void test('should handle database errors', async () => {
     const requestDto: CreateTaskRequestDto = {
       title: 'Test Task',
     };
@@ -146,7 +149,7 @@ describe('CreateTaskEndpoint', () => {
     sinon.assert.calledWith(mockService.execute, requestDto);
   });
 
-  test('should handle all status enum values', async () => {
+  void test('should handle all status enum values', async () => {
     const statuses = [
       TaskStatus.PENDING,
       TaskStatus.IN_PROGRESS,
@@ -180,7 +183,7 @@ describe('CreateTaskEndpoint', () => {
     }
   });
 
-  test('should handle all priority enum values', async () => {
+  void test('should handle all priority enum values', async () => {
     const priorities = [
       TaskPriority.LOW,
       TaskPriority.MEDIUM,

@@ -11,44 +11,44 @@
 import { describe, test } from 'node:test';
 import { strict as assert } from 'node:assert';
 
-describe('Branch Coverage - Import all source files', () => {
-  test('should import all module files to cover import branches', () => {
+void describe('Branch Coverage - Import all source files', () => {
+  void test('should import all module files to cover import branches', async () => {
     // Import all module files to trigger their import branches
-    require('./app.module');
-    require('./app.controller');
-    require('./app.service');
-    require('./modules/tasks/tasks.module');
-    require('./modules/tasks/entities/task.entity');
+    await import('./app.module');
+    await import('./app.controller');
+    await import('./app.service');
+    await import('./modules/tasks/tasks.module');
+    await import('./modules/tasks/entities/task.entity');
 
     assert.ok(true);
   });
 
-  test('should import all endpoint files to cover import branches', () => {
-    require('./modules/tasks/apps/features/v1/createTask/endpoint');
-    require('./modules/tasks/apps/features/v1/updateTask/endpoint');
-    require('./modules/tasks/apps/features/v1/removeTask/endpoint');
-    require('./modules/tasks/apps/features/v1/getTaskById/endpoint');
-    require('./modules/tasks/apps/features/v1/getTasks/endpoint');
+  void test('should import all endpoint files to cover import branches', async () => {
+    await import('./modules/tasks/apps/features/v1/createTask/endpoint');
+    await import('./modules/tasks/apps/features/v1/updateTask/endpoint');
+    await import('./modules/tasks/apps/features/v1/removeTask/endpoint');
+    await import('./modules/tasks/apps/features/v1/getTaskById/endpoint');
+    await import('./modules/tasks/apps/features/v1/getTasks/endpoint');
 
     assert.ok(true);
   });
 
-  test('should import all service files to cover import branches', () => {
-    require('./modules/tasks/apps/features/v1/createTask/services');
-    require('./modules/tasks/apps/features/v1/updateTask/services');
-    require('./modules/tasks/apps/features/v1/removeTask/services');
-    require('./modules/tasks/apps/features/v1/getTaskById/services');
-    require('./modules/tasks/apps/features/v1/getTasks/services');
+  void test('should import all service files to cover import branches', async () => {
+    await import('./modules/tasks/apps/features/v1/createTask/services');
+    await import('./modules/tasks/apps/features/v1/updateTask/services');
+    await import('./modules/tasks/apps/features/v1/removeTask/services');
+    await import('./modules/tasks/apps/features/v1/getTaskById/services');
+    await import('./modules/tasks/apps/features/v1/getTasks/services');
 
     assert.ok(true);
   });
 
-  test('should import all contract files to cover import branches', () => {
-    require('./modules/tasks/apps/features/v1/createTask/contract');
-    require('./modules/tasks/apps/features/v1/updateTask/contract');
-    require('./modules/tasks/apps/features/v1/removeTask/contract');
-    require('./modules/tasks/apps/features/v1/getTaskById/contract');
-    require('./modules/tasks/apps/features/v1/getTasks/contract');
+  void test('should import all contract files to cover import branches', async () => {
+    await import('./modules/tasks/apps/features/v1/createTask/contract');
+    await import('./modules/tasks/apps/features/v1/updateTask/contract');
+    await import('./modules/tasks/apps/features/v1/removeTask/contract');
+    await import('./modules/tasks/apps/features/v1/getTaskById/contract');
+    await import('./modules/tasks/apps/features/v1/getTasks/contract');
 
     assert.ok(true);
   });

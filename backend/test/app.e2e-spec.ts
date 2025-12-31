@@ -75,7 +75,7 @@ describe('AppController (e2e)', () => {
               return mockQueryBuilder;
             },
           ),
-        getManyAndCount: jest.fn().mockImplementation(async () => {
+        getManyAndCount: jest.fn().mockImplementation(() => {
           let filteredTasks = [...tasks];
 
           // Apply filters from where/andWhere calls
@@ -94,9 +94,18 @@ describe('AppController (e2e)', () => {
               );
             }
             if (condition.includes('ILIKE :search') && params?.search) {
-              const searchTerm = String(params.search)
-                .replace(/%/g, '')
-                .toLowerCase();
+              const searchValue = params.search;
+              const searchTerm =
+                typeof searchValue === 'string'
+                  ? searchValue.replace(/%/g, '').toLowerCase()
+                  : typeof searchValue === 'object' &&
+                      searchValue !== null &&
+                      'toString' in searchValue
+                    ? (searchValue as { toString: () => string })
+                        .toString()
+                        .replace(/%/g, '')
+                        .toLowerCase()
+                    : '';
               filteredTasks = filteredTasks.filter(
                 (t) =>
                   t.title.toLowerCase().includes(searchTerm) ||
@@ -141,7 +150,7 @@ describe('AppController (e2e)', () => {
         Object.assign(task, dto);
         return task;
       }),
-      save: jest.fn().mockImplementation(async (task: Task) => {
+      save: jest.fn().mockImplementation((task: Task) => {
         if (!task.id) {
           task.id = generateId();
           task.created_at = new Date();
@@ -162,14 +171,14 @@ describe('AppController (e2e)', () => {
       }),
       findOne: jest
         .fn()
-        .mockImplementation(async (options: { where?: { id?: string } }) => {
+        .mockImplementation((options: { where?: { id?: string } }) => {
           if (options.where?.id) {
             const id = options.where.id;
             return tasks.find((t) => t.id === id) || null;
           }
           return null;
         }),
-      remove: jest.fn().mockImplementation(async (task: Task) => {
+      remove: jest.fn().mockImplementation((task: Task) => {
         const index = tasks.findIndex((t) => t.id === task.id);
         if (index !== -1) {
           tasks.splice(index, 1);
@@ -222,8 +231,9 @@ describe('AppController (e2e)', () => {
         .get('/api')
         .expect(200)
         .expect((res) => {
-          expect(res.body).toHaveProperty('status');
-          expect(res.body.status).toBe('ok');
+          const body = res.body as { status?: string };
+          expect(body).toHaveProperty('status');
+          expect(body.status).toBe('ok');
         });
     });
 
@@ -245,11 +255,18 @@ describe('AppController (e2e)', () => {
         })
         .expect(201);
 
-      expect(response.body).toHaveProperty('id');
-      expect(response.body.title).toBe('E2E Test Task');
-      expect(response.body.description).toBe('E2E Test Description');
-      expect(response.body.status).toBe(TaskStatus.PENDING);
-      expect(response.body.priority).toBe(TaskPriority.HIGH);
+      const body = response.body as {
+        id?: string;
+        title?: string;
+        description?: string;
+        status?: TaskStatus;
+        priority?: TaskPriority;
+      };
+      expect(body).toHaveProperty('id');
+      expect(body.title).toBe('E2E Test Task');
+      expect(body.description).toBe('E2E Test Description');
+      expect(body.status).toBe(TaskStatus.PENDING);
+      expect(body.priority).toBe(TaskPriority.HIGH);
     });
 
     it('POST /api/v1/tasks should create a task with minimal data', async () => {
@@ -260,9 +277,14 @@ describe('AppController (e2e)', () => {
         })
         .expect(201);
 
-      expect(response.body).toHaveProperty('id');
-      expect(response.body.title).toBe('Minimal Task');
-      expect(response.body.status).toBe(TaskStatus.PENDING);
+      const body = response.body as {
+        id?: string;
+        title?: string;
+        status?: TaskStatus;
+      };
+      expect(body).toHaveProperty('id');
+      expect(body.title).toBe('Minimal Task');
+      expect(body.status).toBe(TaskStatus.PENDING);
     });
 
     it('POST /api/v1/tasks should fail validation with empty title', () => {
@@ -293,13 +315,22 @@ describe('AppController (e2e)', () => {
         .get('/api/v1/tasks')
         .expect(200);
 
-      expect(response.body).toHaveProperty('data');
-      expect(response.body).toHaveProperty('meta');
-      expect(Array.isArray(response.body.data)).toBe(true);
-      expect(response.body.meta).toHaveProperty('page');
-      expect(response.body.meta).toHaveProperty('limit');
-      expect(response.body.meta).toHaveProperty('total');
-      expect(response.body.meta).toHaveProperty('totalPages');
+      const body = response.body as {
+        data?: unknown[];
+        meta?: {
+          page?: number;
+          limit?: number;
+          total?: number;
+          totalPages?: number;
+        };
+      };
+      expect(body).toHaveProperty('data');
+      expect(body).toHaveProperty('meta');
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.meta).toHaveProperty('page');
+      expect(body.meta).toHaveProperty('limit');
+      expect(body.meta).toHaveProperty('total');
+      expect(body.meta).toHaveProperty('totalPages');
     });
 
     it('GET /api/v1/tasks?page=1&limit=5 should paginate tasks', async () => {
@@ -316,9 +347,13 @@ describe('AppController (e2e)', () => {
         .get('/api/v1/tasks?page=1&limit=5')
         .expect(200);
 
-      expect(response.body.meta.page).toBe(1);
-      expect(response.body.meta.limit).toBe(5);
-      expect(response.body.data.length).toBeLessThanOrEqual(5);
+      const body = response.body as {
+        meta?: { page?: number; limit?: number };
+        data?: unknown[];
+      };
+      expect(body.meta?.page).toBe(1);
+      expect(body.meta?.limit).toBe(5);
+      expect(body.data?.length).toBeLessThanOrEqual(5);
     });
 
     it('GET /api/v1/tasks?status=PENDING should filter by status', async () => {
@@ -337,10 +372,9 @@ describe('AppController (e2e)', () => {
         .get('/api/v1/tasks?status=PENDING')
         .expect(200);
 
+      const body = response.body as { data?: Array<{ status?: TaskStatus }> };
       expect(
-        response.body.data.every(
-          (task: { status: TaskStatus }) => task.status === TaskStatus.PENDING,
-        ),
+        body.data?.every((task) => task.status === TaskStatus.PENDING),
       ).toBe(true);
     });
 
@@ -351,15 +385,21 @@ describe('AppController (e2e)', () => {
         .send({
           title: 'Task for Get Test',
         });
-      const taskId = createResponse.body.id as string;
+      const createBody = createResponse.body as { id?: string };
+      const taskId = createBody.id as string;
 
       const response = await request(app.getHttpServer())
         .get(`/api/v1/tasks/${taskId}`)
         .expect(200);
 
-      expect(response.body.id).toBe(taskId);
-      expect(response.body).toHaveProperty('title');
-      expect(response.body).toHaveProperty('status');
+      const body = response.body as {
+        id?: string;
+        title?: string;
+        status?: TaskStatus;
+      };
+      expect(body.id).toBe(taskId);
+      expect(body).toHaveProperty('title');
+      expect(body).toHaveProperty('status');
     });
 
     it('GET /api/v1/tasks/:id should return 404 for non-existent task', () => {
@@ -375,7 +415,8 @@ describe('AppController (e2e)', () => {
         .send({
           title: 'Task for Update Test',
         });
-      const taskId = createResponse.body.id as string;
+      const createBody = createResponse.body as { id?: string };
+      const taskId = createBody.id as string;
 
       const response = await request(app.getHttpServer())
         .put(`/api/v1/tasks/${taskId}`)
@@ -386,10 +427,16 @@ describe('AppController (e2e)', () => {
         })
         .expect(200);
 
-      expect(response.body.id).toBe(taskId);
-      expect(response.body.title).toBe('Updated Task Title');
-      expect(response.body.status).toBe(TaskStatus.IN_PROGRESS);
-      expect(response.body.priority).toBe(TaskPriority.MEDIUM);
+      const body = response.body as {
+        id?: string;
+        title?: string;
+        status?: TaskStatus;
+        priority?: TaskPriority;
+      };
+      expect(body.id).toBe(taskId);
+      expect(body.title).toBe('Updated Task Title');
+      expect(body.status).toBe(TaskStatus.IN_PROGRESS);
+      expect(body.priority).toBe(TaskPriority.MEDIUM);
     });
 
     it('PUT /api/v1/tasks/:id should return 404 for non-existent task', () => {
@@ -409,14 +456,16 @@ describe('AppController (e2e)', () => {
         .send({
           title: 'Task to Delete',
         });
-      const taskIdToDelete = createResponse.body.id as string;
+      const createBody = createResponse.body as { id?: string };
+      const taskIdToDelete = createBody.id as string;
 
       const response = await request(app.getHttpServer())
         .delete(`/api/v1/tasks/${taskIdToDelete}`)
         .expect(200);
 
-      expect(response.body.message).toBe('Task deleted successfully');
-      expect(response.body.id).toBe(taskIdToDelete);
+      const body = response.body as { message?: string; id?: string };
+      expect(body.message).toBe('Task deleted successfully');
+      expect(body.id).toBe(taskIdToDelete);
     });
 
     it('DELETE /api/v1/tasks/:id should return 404 for non-existent task', () => {
@@ -440,11 +489,14 @@ describe('AppController (e2e)', () => {
         .get('/api/v1/tasks?search=test')
         .expect(200);
 
-      expect(response.body.data.length).toBeGreaterThan(0);
+      const body = response.body as {
+        data?: Array<{ title?: string; description?: string }>;
+      };
+      expect(body.data?.length).toBeGreaterThan(0);
       expect(
-        response.body.data.some(
-          (task: { title: string; description?: string }) =>
-            task.title.toLowerCase().includes('test') ||
+        body.data?.some(
+          (task) =>
+            task.title?.toLowerCase().includes('test') ||
             task.description?.toLowerCase().includes('test'),
         ),
       ).toBe(true);
@@ -466,11 +518,11 @@ describe('AppController (e2e)', () => {
         .get('/api/v1/tasks?priority=HIGH')
         .expect(200);
 
+      const body = response.body as {
+        data?: Array<{ priority?: TaskPriority }>;
+      };
       expect(
-        response.body.data.every(
-          (task: { priority: TaskPriority }) =>
-            task.priority === TaskPriority.HIGH,
-        ),
+        body.data?.every((task) => task.priority === TaskPriority.HIGH),
       ).toBe(true);
     });
   });

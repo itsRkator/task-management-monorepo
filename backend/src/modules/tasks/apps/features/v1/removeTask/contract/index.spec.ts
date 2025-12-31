@@ -1,11 +1,11 @@
 import { RemoveTaskResponseDto } from './index';
 
-describe('RemoveTaskResponseDto', () => {
-  it('should be defined', () => {
+void describe('RemoveTaskResponseDto', () => {
+  void it('should be defined', () => {
     expect(RemoveTaskResponseDto).toBeDefined();
   });
 
-  it('should allow creating response object', () => {
+  void it('should allow creating response object', () => {
     const response = new RemoveTaskResponseDto();
     response.message = 'Task deleted successfully';
     response.id = '123';

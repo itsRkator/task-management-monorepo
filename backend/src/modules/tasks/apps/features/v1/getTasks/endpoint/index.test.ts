@@ -12,15 +12,14 @@ import {
   Task,
 } from '../../../../../entities/task.entity';
 
-describe('GetTasksEndpoint', () => {
+void describe('GetTasksEndpoint', () => {
   let controller: GetTasksEndpoint;
   let module: TestingModule;
-  let service: GetTasksService;
   let mockService: {
     execute: sinon.SinonStub;
   };
 
-  beforeEach(async () => {
+  void beforeEach(async () => {
     mockService = {
       execute: sinon.stub(),
     };
@@ -39,27 +38,27 @@ describe('GetTasksEndpoint', () => {
       ],
     }).compile();
 
-    service = module.get<GetTasksService>(GetTasksService);
     controller = module.get<GetTasksEndpoint>(GetTasksEndpoint);
 
     // Manually inject service if not injected (workaround for NestJS DI issue)
-    if (!(controller as any).getTasksService) {
-      (controller as any).getTasksService = mockService;
+    const controllerAny = controller as Record<string, unknown>;
+    if (!controllerAny.getTasksService) {
+      controllerAny.getTasksService = mockService;
     }
   });
 
-  afterEach(async () => {
+  void afterEach(async () => {
     if (module) {
       await module.close();
     }
     sinon.restore();
   });
 
-  test('should be defined', () => {
+  void test('should be defined', () => {
     assert.ok(controller);
   });
 
-  test('should get tasks with default query', async () => {
+  void test('should get tasks with default query', async () => {
     const query: GetTasksQueryDto = {};
     const responseDto: GetTasksResponseDto = {
       data: [],
@@ -80,7 +79,7 @@ describe('GetTasksEndpoint', () => {
     assert.strictEqual(mockService.execute.callCount, 1);
   });
 
-  test('should get tasks with pagination', async () => {
+  void test('should get tasks with pagination', async () => {
     const query: GetTasksQueryDto = {
       page: 2,
       limit: 20,
@@ -115,7 +114,7 @@ describe('GetTasksEndpoint', () => {
     assert.ok(mockService.execute.calledWith(query));
   });
 
-  test('should get tasks with status filter', async () => {
+  void test('should get tasks with status filter', async () => {
     const query: GetTasksQueryDto = {
       status: TaskStatus.COMPLETED,
     };
@@ -138,7 +137,7 @@ describe('GetTasksEndpoint', () => {
     assert.ok(mockService.execute.calledWith(query));
   });
 
-  test('should get tasks with priority filter', async () => {
+  void test('should get tasks with priority filter', async () => {
     const query: GetTasksQueryDto = {
       priority: TaskPriority.HIGH,
     };
@@ -161,7 +160,7 @@ describe('GetTasksEndpoint', () => {
     assert.ok(mockService.execute.calledWith(query));
   });
 
-  test('should get tasks with search query', async () => {
+  void test('should get tasks with search query', async () => {
     const query: GetTasksQueryDto = {
       search: 'test',
     };
@@ -184,7 +183,7 @@ describe('GetTasksEndpoint', () => {
     assert.ok(mockService.execute.calledWith(query));
   });
 
-  test('should get tasks with all filters combined', async () => {
+  void test('should get tasks with all filters combined', async () => {
     const query: GetTasksQueryDto = {
       page: 1,
       limit: 5,
@@ -211,7 +210,7 @@ describe('GetTasksEndpoint', () => {
     assert.ok(mockService.execute.calledWith(query));
   });
 
-  test('should handle service errors', async () => {
+  void test('should handle service errors', async () => {
     const query: GetTasksQueryDto = {};
 
     const error = new Error('Service error');
@@ -227,7 +226,7 @@ describe('GetTasksEndpoint', () => {
     assert.ok(mockService.execute.calledWith(query));
   });
 
-  test('should handle database errors', async () => {
+  void test('should handle database errors', async () => {
     const query: GetTasksQueryDto = {};
 
     const error = new Error('Database connection failed');
@@ -242,7 +241,7 @@ describe('GetTasksEndpoint', () => {
     );
   });
 
-  test('should handle all status enum values in filter', async () => {
+  void test('should handle all status enum values in filter', async () => {
     const statuses = [
       TaskStatus.PENDING,
       TaskStatus.IN_PROGRESS,
@@ -264,12 +263,12 @@ describe('GetTasksEndpoint', () => {
 
       mockService.execute.resolves(responseDto);
 
-      const result = await controller.getTasks(query);
+      await controller.getTasks(query);
       assert.ok(mockService.execute.calledWith(query));
     }
   });
 
-  test('should handle all priority enum values in filter', async () => {
+  void test('should handle all priority enum values in filter', async () => {
     const priorities = [
       TaskPriority.LOW,
       TaskPriority.MEDIUM,
@@ -290,12 +289,12 @@ describe('GetTasksEndpoint', () => {
 
       mockService.execute.resolves(responseDto);
 
-      const result = await controller.getTasks(query);
+      await controller.getTasks(query);
       assert.ok(mockService.execute.calledWith(query));
     }
   });
 
-  test('should handle boundary pagination values', async () => {
+  void test('should handle boundary pagination values', async () => {
     const testCases = [
       { page: 1, limit: 1 },
       { page: 1, limit: 100 },
@@ -315,7 +314,7 @@ describe('GetTasksEndpoint', () => {
 
       mockService.execute.resolves(responseDto);
 
-      const result = await controller.getTasks(query);
+      await controller.getTasks(query);
       assert.ok(mockService.execute.calledWith(query));
     }
   });

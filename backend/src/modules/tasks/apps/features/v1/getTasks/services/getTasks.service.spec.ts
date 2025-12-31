@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
 import { GetTasksService } from './index';
 import {
   Task,
@@ -9,10 +8,8 @@ import {
 } from '../../../../../entities/task.entity';
 import { GetTasksQueryDto } from '../contract';
 
-describe('GetTasksService', () => {
+void describe('GetTasksService', () => {
   let service: GetTasksService;
-  let repository: Repository<Task>;
-  let queryBuilder: SelectQueryBuilder<Task>;
 
   const mockQueryBuilder = {
     where: jest.fn().mockReturnThis(),
@@ -27,7 +24,7 @@ describe('GetTasksService', () => {
     createQueryBuilder: jest.fn(() => mockQueryBuilder),
   };
 
-  beforeEach(async () => {
+  void beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetTasksService,
@@ -39,18 +36,17 @@ describe('GetTasksService', () => {
     }).compile();
 
     service = module.get<GetTasksService>(GetTasksService);
-    repository = module.get<Repository<Task>>(getRepositoryToken(Task));
   });
 
-  afterEach(() => {
+  void afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
+  void it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  it('should get tasks with pagination', async () => {
+  void it('should get tasks with pagination', async () => {
     const query: GetTasksQueryDto = {
       page: 1,
       limit: 10,
@@ -82,7 +78,7 @@ describe('GetTasksService', () => {
     expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
   });
 
-  it('should filter tasks by status', async () => {
+  void it('should filter tasks by status', async () => {
     const query: GetTasksQueryDto = {
       page: 1,
       limit: 10,
@@ -99,7 +95,7 @@ describe('GetTasksService', () => {
     );
   });
 
-  it('should filter tasks by priority', async () => {
+  void it('should filter tasks by priority', async () => {
     const query: GetTasksQueryDto = {
       page: 1,
       limit: 10,
@@ -116,7 +112,7 @@ describe('GetTasksService', () => {
     );
   });
 
-  it('should search tasks by title or description', async () => {
+  void it('should search tasks by title or description', async () => {
     const query: GetTasksQueryDto = {
       page: 1,
       limit: 10,
@@ -133,7 +129,7 @@ describe('GetTasksService', () => {
     );
   });
 
-  it('should use default pagination values', async () => {
+  void it('should use default pagination values', async () => {
     const query: GetTasksQueryDto = {};
 
     mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
@@ -144,7 +140,7 @@ describe('GetTasksService', () => {
     expect(result.meta.limit).toBe(10);
   });
 
-  it('should handle multiple filters together', async () => {
+  void it('should handle multiple filters together', async () => {
     const query: GetTasksQueryDto = {
       page: 1,
       limit: 10,
@@ -161,7 +157,7 @@ describe('GetTasksService', () => {
     expect(mockQueryBuilder.andWhere).toHaveBeenCalledTimes(2);
   });
 
-  it('should calculate totalPages correctly', async () => {
+  void it('should calculate totalPages correctly', async () => {
     const query: GetTasksQueryDto = {
       page: 1,
       limit: 10,
@@ -175,7 +171,7 @@ describe('GetTasksService', () => {
     expect(result.meta.totalPages).toBe(3);
   });
 
-  it('should handle zero total pages', async () => {
+  void it('should handle zero total pages', async () => {
     const query: GetTasksQueryDto = {
       page: 1,
       limit: 10,
@@ -189,7 +185,7 @@ describe('GetTasksService', () => {
     expect(result.meta.totalPages).toBe(0);
   });
 
-  it('should map task items correctly', async () => {
+  void it('should map task items correctly', async () => {
     const query: GetTasksQueryDto = {
       page: 1,
       limit: 10,
@@ -233,7 +229,7 @@ describe('GetTasksService', () => {
     expect(result.data[1].due_date).toBeNull();
   });
 
-  it('should calculate skip correctly for different pages', async () => {
+  void it('should calculate skip correctly for different pages', async () => {
     const query: GetTasksQueryDto = {
       page: 3,
       limit: 10,
@@ -247,7 +243,7 @@ describe('GetTasksService', () => {
     expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
   });
 
-  it('should order by created_at DESC', async () => {
+  void it('should order by created_at DESC', async () => {
     const query: GetTasksQueryDto = {
       page: 1,
       limit: 10,

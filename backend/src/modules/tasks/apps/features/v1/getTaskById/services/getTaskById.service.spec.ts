@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { GetTaskByIdService } from './index';
 import {
@@ -9,15 +8,14 @@ import {
   TaskPriority,
 } from '../../../../../entities/task.entity';
 
-describe('GetTaskByIdService', () => {
+void describe('GetTaskByIdService', () => {
   let service: GetTaskByIdService;
-  let repository: Repository<Task>;
 
   const mockRepository = {
     findOne: jest.fn(),
   };
 
-  beforeEach(async () => {
+  void beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetTaskByIdService,
@@ -29,18 +27,17 @@ describe('GetTaskByIdService', () => {
     }).compile();
 
     service = module.get<GetTaskByIdService>(GetTaskByIdService);
-    repository = module.get<Repository<Task>>(getRepositoryToken(Task));
   });
 
-  afterEach(() => {
+  void afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
+  void it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  it('should get a task by id successfully', async () => {
+  void it('should get a task by id successfully', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const mockTask = {
       id: taskId,
@@ -71,7 +68,7 @@ describe('GetTaskByIdService', () => {
     expect(mockRepository.findOne).toHaveBeenCalledTimes(1);
   });
 
-  it('should throw NotFoundException when task does not exist', async () => {
+  void it('should throw NotFoundException when task does not exist', async () => {
     const taskId = 'non-existent-id';
 
     mockRepository.findOne.mockResolvedValue(null);
@@ -85,7 +82,7 @@ describe('GetTaskByIdService', () => {
     });
   });
 
-  it('should return all task properties', async () => {
+  void it('should return all task properties', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const mockTask = {
       id: taskId,
@@ -112,7 +109,7 @@ describe('GetTaskByIdService', () => {
     expect(result).toHaveProperty('updated_at');
   });
 
-  it('should handle task with null optional fields', async () => {
+  void it('should handle task with null optional fields', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
     const mockTask = {
       id: taskId,
@@ -132,5 +129,29 @@ describe('GetTaskByIdService', () => {
     expect(result.description).toBeNull();
     expect(result.priority).toBeNull();
     expect(result.due_date).toBeNull();
+  });
+
+  void it('should handle database errors during findOne', async () => {
+    const taskId = '123e4567-e89b-12d3-a456-426614174000';
+    const dbError = new Error('Database connection failed');
+    mockRepository.findOne.mockRejectedValue(dbError);
+
+    await expect(service.execute(taskId)).rejects.toThrow(dbError);
+    expect(mockRepository.findOne).toHaveBeenCalledWith({
+      where: { id: taskId },
+    });
+  });
+
+  void it('should handle undefined task (branch coverage for !task check)', async () => {
+    const taskId = 'non-existent-id';
+    mockRepository.findOne.mockResolvedValue(undefined);
+
+    await expect(service.execute(taskId)).rejects.toThrow(NotFoundException);
+    await expect(service.execute(taskId)).rejects.toThrow(
+      `Task with ID ${taskId} not found`,
+    );
+    expect(mockRepository.findOne).toHaveBeenCalledWith({
+      where: { id: taskId },
+    });
   });
 });

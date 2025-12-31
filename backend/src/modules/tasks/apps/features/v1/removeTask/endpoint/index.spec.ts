@@ -3,11 +3,11 @@ import { RemoveTaskEndpoint } from './index';
 import { RemoveTaskService } from '../services';
 import { RemoveTaskResponseDto } from '../contract';
 
-describe('RemoveTaskEndpoint', () => {
+void describe('RemoveTaskEndpoint', () => {
   let controller: RemoveTaskEndpoint;
   let service: RemoveTaskService;
 
-  beforeEach(async () => {
+  void beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RemoveTaskEndpoint],
       providers: [
@@ -24,7 +24,7 @@ describe('RemoveTaskEndpoint', () => {
     service = module.get<RemoveTaskService>(RemoveTaskService);
   });
 
-  it('should be defined', () => {
+  void it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
@@ -41,28 +41,31 @@ describe('RemoveTaskEndpoint', () => {
       const result = await controller.remove(taskId);
 
       expect(result).toEqual(responseDto);
-      expect(service.execute).toHaveBeenCalledWith(taskId);
-      expect(service.execute).toHaveBeenCalledTimes(1);
+      const executeSpy = jest.spyOn(service, 'execute');
+      expect(executeSpy).toHaveBeenCalledWith(taskId);
+      expect(executeSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should handle NotFoundException when task does not exist', async () => {
       const taskId = 'non-existent-id';
 
       const error = new Error('Task not found');
-      jest.spyOn(service, 'execute').mockRejectedValue(error);
+      const executeSpy = jest.spyOn(service, 'execute');
+      executeSpy.mockRejectedValue(error);
 
       await expect(controller.remove(taskId)).rejects.toThrow(error);
-      expect(service.execute).toHaveBeenCalledWith(taskId);
+      expect(executeSpy).toHaveBeenCalledWith(taskId);
     });
 
     it('should handle service errors', async () => {
       const taskId = '123e4567-e89b-12d3-a456-426614174000';
 
       const error = new Error('Service error');
-      jest.spyOn(service, 'execute').mockRejectedValue(error);
+      const executeSpy = jest.spyOn(service, 'execute');
+      executeSpy.mockRejectedValue(error);
 
       await expect(controller.remove(taskId)).rejects.toThrow(error);
-      expect(service.execute).toHaveBeenCalledWith(taskId);
+      expect(executeSpy).toHaveBeenCalledWith(taskId);
     });
   });
 });
