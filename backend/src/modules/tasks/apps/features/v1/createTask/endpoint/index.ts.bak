@@ -2,7 +2,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CreateTaskService } from '../services';
-/* c8 ignore end */
 import { CreateTaskRequestDto, CreateTaskResponseDto } from '../contract';
 
 @ApiTags('tasks')

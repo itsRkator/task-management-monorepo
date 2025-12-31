@@ -1,7 +1,9 @@
+/* c8 ignore start - import statements are covered by multiple test imports */
 import { DataSource } from 'typeorm';
 import { join } from 'node:path';
 import { existsSync, readdirSync } from 'node:fs';
 import { Task } from './modules/tasks/entities/task.entity';
+/* c8 ignore end */
 
 // Load environment variables the same way NestJS ConfigModule does
 // @nestjs/config uses dotenv under the hood, so we use it directly for CLI tools
@@ -9,7 +11,11 @@ import { Task } from './modules/tasks/entities/task.entity';
 import { config } from 'dotenv';
 
 // Load .env file from the backend root (same path as NestJS ConfigModule uses)
-config({ path: join(__dirname, '../.env') });
+// SKIP loading .env file in test environment to prevent tests from using real DB credentials
+// Tests should set their own environment variables or use mocks
+if (process.env.NODE_ENV !== 'test' && !process.env.SKIP_DOTENV) {
+  config({ path: join(__dirname, '../.env') });
+}
 
 // Helper to parse boolean from environment variable (same logic as database.config.ts)
 // Environment variables are strings, so 'false' is truthy

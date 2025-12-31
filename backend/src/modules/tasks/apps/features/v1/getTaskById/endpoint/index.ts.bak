@@ -2,7 +2,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { GetTaskByIdService } from '../services';
-/* c8 ignore end */
 import { GetTaskByIdResponseDto } from '../contract';
 
 @ApiTags('tasks')

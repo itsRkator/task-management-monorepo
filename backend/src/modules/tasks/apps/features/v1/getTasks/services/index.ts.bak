@@ -7,7 +7,6 @@ import {
   TaskPriority,
   TaskStatus,
 } from '../../../../../entities/task.entity';
-/* c8 ignore end */
 import {
   GetTasksQueryDto,
   GetTasksResponseDto,

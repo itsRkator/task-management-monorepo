@@ -1,9 +1,60 @@
 /* c8 ignore start - import statements are covered by multiple test imports */
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsDateString,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-/* c8 ignore end */
 import { TaskStatus, TaskPriority } from '../../../../../entities/task.entity';
 
-export class GetTaskByIdResponseDto {
+export class UpdateTaskRequestDto {
+  @ApiProperty({
+    description: 'Task title',
+    example: 'Complete project documentation',
+    maxLength: 255,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  title: string;
+
+  @ApiPropertyOptional({
+    description: 'Task description',
+    example: 'Write comprehensive documentation for the project',
+  })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiProperty({
+    description: 'Task status',
+    enum: TaskStatus,
+  })
+  @IsEnum(TaskStatus)
+  @IsNotEmpty()
+  status: TaskStatus;
+
+  @ApiPropertyOptional({
+    description: 'Task priority',
+    enum: TaskPriority,
+  })
+  @IsEnum(TaskPriority)
+  @IsOptional()
+  priority?: TaskPriority;
+
+  @ApiPropertyOptional({
+    description: 'Task due date',
+    example: '2024-12-31T23:59:59Z',
+  })
+  @IsDateString()
+  @IsOptional()
+  due_date?: string;
+}
+
+export class UpdateTaskResponseDto {
   @ApiProperty({
     description: 'Task ID',
     example: '123e4567-e89b-12d3-a456-426614174000',

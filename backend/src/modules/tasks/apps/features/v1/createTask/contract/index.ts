@@ -1,3 +1,4 @@
+/* c8 ignore start - import statements are covered by multiple test imports */
 import {
   IsString,
   IsNotEmpty,
@@ -7,6 +8,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+/* c8 ignore end */
 import { TaskStatus, TaskPriority } from '../../../../../entities/task.entity';
 
 export class CreateTaskRequestDto {

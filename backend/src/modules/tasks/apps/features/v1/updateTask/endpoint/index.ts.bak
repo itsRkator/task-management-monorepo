@@ -2,7 +2,6 @@
 import { Controller, Put, Param, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { UpdateTaskService } from '../services';
-/* c8 ignore end */
 import { UpdateTaskRequestDto, UpdateTaskResponseDto } from '../contract';
 
 @ApiTags('tasks')

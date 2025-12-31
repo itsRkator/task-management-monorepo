@@ -1,5 +1,4 @@
 /* c8 ignore start - import statements are covered by multiple test imports */
-/* c8 ignore end */
 import {
   Entity,
   PrimaryGeneratedColumn,

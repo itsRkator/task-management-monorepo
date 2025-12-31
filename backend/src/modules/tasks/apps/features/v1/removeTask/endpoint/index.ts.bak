@@ -2,7 +2,6 @@
 import { Controller, Delete, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { RemoveTaskService } from '../services';
-/* c8 ignore end */
 import { RemoveTaskResponseDto } from '../contract';
 
 @ApiTags('tasks')

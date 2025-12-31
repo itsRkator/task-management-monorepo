@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task, TaskStatus } from '../../../../../entities/task.entity';
-/* c8 ignore end */
 import { CreateTaskRequestDto, CreateTaskResponseDto } from '../contract';
 
 @Injectable()
