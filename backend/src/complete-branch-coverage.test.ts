@@ -1,15 +1,15 @@
 /**
  * COMPLETE Branch Coverage Test - Final attempt to achieve 100% branch coverage
- * 
+ *
  * This test imports EVERY file in EVERY possible way to ensure 100% branch coverage.
- * 
+ *
  * Strategy:
  * 1. Import each file 20+ times in isolated contexts
  * 2. Import all dependencies before importing modules
  * 3. Use all import styles multiple times
  * 4. Import in different test contexts
  * 5. Import files in different orders
- * 
+ *
  * CRITICAL: We set NODE_ENV='test' and SKIP_BOOTSTRAP to prevent main.ts
  * from calling bootstrap() which would try to connect to a real database.
  */
@@ -31,7 +31,7 @@ void describe('Complete Branch Coverage - 100% Coverage', () => {
     process.env.NODE_ENV = 'test';
     process.env.SKIP_BOOTSTRAP = 'true';
     process.env.SKIP_DOTENV = 'true';
-    
+
     if (!nestFactoryCreateStub) {
       nestFactoryCreateStub = sinon.stub(NestFactory, 'create').resolves({
         useGlobalPipes: sinon.stub().returnsThis(),
@@ -75,12 +75,12 @@ void describe('Complete Branch Coverage - 100% Coverage', () => {
 
     // Import each file 20 times
     for (const filePath of allFiles) {
-      const imports = [];
+      const imports: Array<Record<string, unknown>> = [];
       for (let i = 0; i < 20; i++) {
-        const mod = await import(filePath);
+        const mod = (await import(filePath)) as Record<string, unknown>;
         imports.push(mod);
       }
-      
+
       // Verify all are cached
       for (let i = 1; i < imports.length; i++) {
         assert.strictEqual(imports[i], imports[0]);
@@ -102,12 +102,12 @@ void describe('Complete Branch Coverage - 100% Coverage', () => {
     ];
 
     for (const dep of deps) {
-      const imports = [];
+      const imports: Array<Record<string, unknown>> = [];
       for (let i = 0; i < 20; i++) {
-        const mod = await import(dep);
+        const mod = (await import(dep)) as Record<string, unknown>;
         imports.push(mod);
       }
-      
+
       for (let i = 1; i < imports.length; i++) {
         assert.strictEqual(imports[i], imports[0]);
       }
@@ -143,22 +143,22 @@ void describe('Complete Branch Coverage - 100% Coverage', () => {
 
     for (const filePath of testFiles) {
       // Pattern 1: Direct import
-      const mod1 = await import(filePath);
-      
+      const mod1 = (await import(filePath)) as Record<string, unknown>;
+
       // Pattern 2: Import and access
-      const mod2 = await import(filePath);
+      const mod2 = (await import(filePath)) as Record<string, unknown>;
       Object.keys(mod2);
-      
+
       // Pattern 3: Import multiple times rapidly
-      const mod3 = await import(filePath);
-      const mod4 = await import(filePath);
-      const mod5 = await import(filePath);
-      
+      const mod3 = (await import(filePath)) as Record<string, unknown>;
+      const mod4 = (await import(filePath)) as Record<string, unknown>;
+      const mod5 = (await import(filePath)) as Record<string, unknown>;
+
       // Pattern 4: Import in sequence
       await import(filePath);
       await import(filePath);
       await import(filePath);
-      
+
       // Verify caching
       assert.strictEqual(mod1, mod2);
       assert.strictEqual(mod2, mod3);
@@ -206,12 +206,12 @@ void describe('Complete Branch Coverage - 100% Coverage', () => {
 
     // Import each module 15 times
     for (const modulePath of modules) {
-      const imports = [];
+      const imports: Array<Record<string, unknown>> = [];
       for (let i = 0; i < 15; i++) {
-        const mod = await import(modulePath);
+        const mod = (await import(modulePath)) as Record<string, unknown>;
         imports.push(mod);
       }
-      
+
       for (let i = 1; i < imports.length; i++) {
         assert.strictEqual(imports[i], imports[0]);
       }
@@ -226,4 +226,3 @@ void describe('Complete Branch Coverage - 100% Coverage', () => {
     sinon.restore();
   });
 });
-

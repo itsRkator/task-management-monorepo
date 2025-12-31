@@ -1,16 +1,16 @@
 /**
  * ULTIMATE Branch Coverage Test
- * 
+ *
  * This test ensures 100% branch coverage by importing every single file
  * in every possible way to cover all import statement branches.
- * 
+ *
  * Strategy:
  * 1. Import every file at least 10 times in different contexts
  * 2. Import all dependencies before importing modules that use them
  * 3. Use all import styles: named, namespace, default, dynamic
  * 4. Import in isolated test contexts to ensure all branches are covered
  * 5. Import files in different orders to cover all import paths
- * 
+ *
  * CRITICAL: We set NODE_ENV='test' and SKIP_BOOTSTRAP to prevent main.ts
  * from calling bootstrap() which would try to connect to a real database.
  */
@@ -33,7 +33,7 @@ void describe('Ultimate Branch Coverage - 100% Import Branch Coverage', () => {
     process.env.NODE_ENV = 'test';
     process.env.SKIP_BOOTSTRAP = 'true';
     process.env.SKIP_DOTENV = 'true';
-    
+
     if (!nestFactoryCreateStub) {
       nestFactoryCreateStub = sinon.stub(NestFactory, 'create').resolves({
         useGlobalPipes: sinon.stub().returnsThis(),
@@ -62,18 +62,18 @@ void describe('Ultimate Branch Coverage - 100% Import Branch Coverage', () => {
     ];
 
     for (const dep of deps) {
-      const imports = [];
+      const imports: Array<Record<string, unknown>> = [];
       // Import 10 times to cover all branches
       for (let i = 0; i < 10; i++) {
-        const mod = await import(dep);
+        const mod = (await import(dep)) as Record<string, unknown>;
         imports.push(mod);
         // Also try named imports
         if (i % 2 === 0) {
-          const mod2 = await import(dep);
+          const mod2 = (await import(dep)) as Record<string, unknown>;
           imports.push(mod2);
         }
       }
-      
+
       // Verify caching
       for (let i = 1; i < imports.length; i++) {
         assert.strictEqual(imports[i], imports[0]);
@@ -110,12 +110,12 @@ void describe('Ultimate Branch Coverage - 100% Import Branch Coverage', () => {
 
     // Import each module 10 times
     for (const modulePath of modules) {
-      const imports = [];
+      const imports: Array<Record<string, unknown>> = [];
       for (let i = 0; i < 10; i++) {
-        const mod = await import(modulePath);
+        const mod = (await import(modulePath)) as Record<string, unknown>;
         imports.push(mod);
       }
-      
+
       // Verify caching
       for (let i = 1; i < imports.length; i++) {
         assert.strictEqual(imports[i], imports[0]);
@@ -163,12 +163,12 @@ void describe('Ultimate Branch Coverage - 100% Import Branch Coverage', () => {
 
     // Import each dependent module 5 times (dependencies are already cached)
     for (const modulePath of dependentModules) {
-      const imports = [];
+      const imports: Array<Record<string, unknown>> = [];
       for (let i = 0; i < 5; i++) {
-        const mod = await import(modulePath);
+        const mod = (await import(modulePath)) as Record<string, unknown>;
         imports.push(mod);
       }
-      
+
       // Verify caching
       for (let i = 1; i < imports.length; i++) {
         assert.strictEqual(imports[i], imports[0]);
@@ -211,30 +211,26 @@ void describe('Ultimate Branch Coverage - 100% Import Branch Coverage', () => {
   });
 
   void test('should import with all possible import styles', async () => {
-    const testModules = [
-      './app.module',
-      './app.controller',
-      './app.service',
-    ];
+    const testModules = ['./app.module', './app.controller', './app.service'];
 
     for (const modulePath of testModules) {
       // Style 1: Default import
-      const mod1 = await import(modulePath);
-      
+      const mod1 = (await import(modulePath)) as Record<string, unknown>;
+
       // Style 2: Namespace import
-      const mod2 = await import(modulePath);
-      
+      const mod2 = (await import(modulePath)) as Record<string, unknown>;
+
       // Style 3: Named import (if available)
-      const mod3 = await import(modulePath);
-      
+      const mod3 = (await import(modulePath)) as Record<string, unknown>;
+
       // Style 4: Dynamic import with await
-      const mod4 = await import(modulePath);
-      
+      const mod4 = (await import(modulePath)) as Record<string, unknown>;
+
       // Style 5: Multiple imports in sequence
-      const mod5 = await import(modulePath);
-      const mod6 = await import(modulePath);
-      const mod7 = await import(modulePath);
-      
+      const mod5 = (await import(modulePath)) as Record<string, unknown>;
+      const mod6 = (await import(modulePath)) as Record<string, unknown>;
+      const mod7 = (await import(modulePath)) as Record<string, unknown>;
+
       // Verify all are the same (cached)
       assert.strictEqual(mod1, mod2);
       assert.strictEqual(mod2, mod3);
@@ -274,15 +270,19 @@ void describe('Ultimate Branch Coverage - 100% Import Branch Coverage', () => {
 
     // Import each file 15 times to ensure all branches are covered
     for (const filePath of allFiles) {
-      const imports = [];
+      const imports: Array<Record<string, unknown>> = [];
       for (let i = 0; i < 15; i++) {
-        const mod = await import(filePath);
+        const mod = (await import(filePath)) as Record<string, unknown>;
         imports.push(mod);
       }
-      
+
       // Verify all imports are cached
       for (let i = 1; i < imports.length; i++) {
-        assert.strictEqual(imports[i], imports[0], `File ${filePath} should be cached`);
+        assert.strictEqual(
+          imports[i],
+          imports[0],
+          `File ${filePath} should be cached`,
+        );
       }
     }
   });
@@ -295,4 +295,3 @@ void describe('Ultimate Branch Coverage - 100% Import Branch Coverage', () => {
     sinon.restore();
   });
 });
-

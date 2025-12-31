@@ -1,15 +1,15 @@
 /**
  * Final comprehensive branch coverage test.
- * 
+ *
  * This test ensures every single module file is imported multiple times
  * in every possible way to achieve 100% branch coverage.
- * 
+ *
  * Strategy:
  * 1. Import every module file at least 5 times
  * 2. Import all dependencies of each module multiple times before importing the module
  * 3. Import modules using different import styles (named, namespace, default)
  * 4. Ensure all import branches (0, 1+) are covered
- * 
+ *
  * IMPORTANT: We set NODE_ENV='test' and SKIP_BOOTSTRAP to prevent main.ts
  * from calling bootstrap() which would try to connect to a real database.
  */
@@ -34,7 +34,7 @@ void describe('Final Branch Coverage - Import All Modules Multiple Times', () =>
     process.env.NODE_ENV = 'test';
     process.env.SKIP_BOOTSTRAP = 'true';
     process.env.SKIP_DOTENV = 'true';
-    
+
     // Mock NestFactory.create to prevent real NestJS app creation
     if (!nestFactoryCreateStub) {
       nestFactoryCreateStub = sinon.stub(NestFactory, 'create').resolves({
@@ -79,18 +79,22 @@ void describe('Final Branch Coverage - Import All Modules Multiple Times', () =>
 
     // Import each module 5 times
     for (const modulePath of modules) {
-      const imports = [];
+      const imports: Array<Record<string, unknown>> = [];
       for (let i = 0; i < 5; i++) {
-        const mod = await import(modulePath);
+        const mod = (await import(modulePath)) as Record<string, unknown>;
         imports.push(mod);
       }
-      
+
       // Verify all imports are the same (cached)
       for (let i = 1; i < imports.length; i++) {
-        assert.strictEqual(imports[i], imports[0], `Module ${modulePath} should be cached`);
+        assert.strictEqual(
+          imports[i],
+          imports[0],
+          `Module ${modulePath} should be cached`,
+        );
       }
     }
-    
+
     assert.ok(true);
   });
 
@@ -106,18 +110,22 @@ void describe('Final Branch Coverage - Import All Modules Multiple Times', () =>
     ];
 
     for (const dep of externalDeps) {
-      const imports = [];
+      const imports: Array<Record<string, unknown>> = [];
       for (let i = 0; i < 5; i++) {
-        const mod = await import(dep);
+        const mod = (await import(dep)) as Record<string, unknown>;
         imports.push(mod);
       }
-      
+
       // Verify all imports are the same (cached)
       for (let i = 1; i < imports.length; i++) {
-        assert.strictEqual(imports[i], imports[0], `Dependency ${dep} should be cached`);
+        assert.strictEqual(
+          imports[i],
+          imports[0],
+          `Dependency ${dep} should be cached`,
+        );
       }
     }
-    
+
     // Now import all internal modules - their dependencies are already cached
     const internalModules = [
       './app.module',
@@ -143,21 +151,25 @@ void describe('Final Branch Coverage - Import All Modules Multiple Times', () =>
     ];
 
     for (const modulePath of internalModules) {
-      const imports = [];
+      const imports: Array<Record<string, unknown>> = [];
       for (let i = 0; i < 5; i++) {
-        const mod = await import(modulePath);
+        const mod = (await import(modulePath)) as Record<string, unknown>;
         imports.push(mod);
       }
-      
+
       // Verify all imports are the same (cached)
       for (let i = 1; i < imports.length; i++) {
-        assert.strictEqual(imports[i], imports[0], `Module ${modulePath} should be cached`);
+        assert.strictEqual(
+          imports[i],
+          imports[0],
+          `Module ${modulePath} should be cached`,
+        );
       }
     }
-    
+
     assert.ok(true);
   });
-  
+
   void test('cleanup', () => {
     // Restore mocks
     if (nestFactoryCreateStub) {
@@ -167,4 +179,3 @@ void describe('Final Branch Coverage - Import All Modules Multiple Times', () =>
     sinon.restore();
   });
 });
-
