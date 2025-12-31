@@ -1,9 +1,9 @@
 /**
  * This test file ensures the production logging block (lines 78-82) is covered.
- * 
+ *
  * IMPORTANT: This file sets NODE_ENV to 'production' but uses SKIP_DOTENV
  * to prevent loading real .env file with database credentials.
- * 
+ *
  * It sets NODE_ENV to 'production' at the top level before any imports
  * to trigger the production logging code path.
  */
@@ -22,12 +22,12 @@ import { strict as assert } from 'node:assert';
 
 void describe('Data Source - Production Environment', () => {
   void test('should execute production logging block when NODE_ENV is production', async () => {
-    // Import data-source - since NODE_ENV is 'production', 
+    // Import data-source - since NODE_ENV is 'production',
     // the logging block (lines 78-82) should execute
     // Note: If the module was already imported, this won't re-execute the top-level code
     // But if this test file runs first (alphabetically), it should work
     const dataSourceModule = await import('./data-source');
-    
+
     // The production logging block should have executed (if module wasn't already loaded)
     assert.ok(dataSourceModule);
     assert.ok(dataSourceModule.AppDataSource);

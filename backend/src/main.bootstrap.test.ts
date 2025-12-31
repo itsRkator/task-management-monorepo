@@ -1,7 +1,7 @@
 /**
  * This test file specifically covers line 43 in main.ts
  * which is the closing brace of the if statement that calls bootstrap().
- * 
+ *
  * IMPORTANT: This file must set environment variables BEFORE importing main.ts
  * to ensure the if condition (lines 41-43) is evaluated and executed.
  */
@@ -43,17 +43,19 @@ void describe('main.ts - Bootstrap Call Coverage', () => {
         getType: sinon.stub().returns('express'),
       }),
     };
-    
+
     createStub = sinon
       .stub(NestFactory, 'create')
       .resolves(
         mockApp as unknown as Awaited<ReturnType<typeof NestFactory.create>>,
       );
-    
+
     // Mock SwaggerModule
-    sinon.stub(SwaggerModule, 'createDocument').returns(
-      {} as unknown as ReturnType<typeof SwaggerModule.createDocument>,
-    );
+    sinon
+      .stub(SwaggerModule, 'createDocument')
+      .returns(
+        {} as unknown as ReturnType<typeof SwaggerModule.createDocument>,
+      );
     sinon.stub(SwaggerModule, 'setup').returns(undefined);
   });
 
@@ -66,17 +68,17 @@ void describe('main.ts - Bootstrap Call Coverage', () => {
     // Since NODE_ENV is 'development' and SKIP_BOOTSTRAP is not set,
     // the condition is true and bootstrap() is called, covering line 43
     await import('./main');
-    
+
     // Wait for async bootstrap to execute
     await new Promise((resolve) => setTimeout(resolve, 200));
-    
+
     // Verify NestFactory.create was called (bootstrap executed)
     assert.ok(createStub.called);
-    
+
     // Clean up
     await mockApp.close();
   });
-  
+
   void test('cleanup - restore environment', () => {
     if (originalEnv) {
       process.env.NODE_ENV = originalEnv;
@@ -91,4 +93,3 @@ void describe('main.ts - Bootstrap Call Coverage', () => {
     assert.ok(true);
   });
 });
-

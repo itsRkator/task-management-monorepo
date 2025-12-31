@@ -230,7 +230,7 @@ void describe('GetTaskByIdEndpoint', () => {
     const endpointInstance = new GetTaskByIdEndpointClass(mockServiceInstance);
     assert.ok(endpointInstance);
     assert.strictEqual(typeof endpointInstance.getById, 'function');
-    
+
     // Actually call getById to ensure lines 26-27 are fully covered
     const testId = '123e4567-e89b-12d3-a456-426614174000';
     const testResponse: GetTaskByIdResponseDto = {
@@ -244,7 +244,7 @@ void describe('GetTaskByIdEndpoint', () => {
       updated_at: new Date(),
     };
     mockServiceInstance.execute.resolves(testResponse);
-    
+
     const result = await endpointInstance.getById(testId);
     assert.deepStrictEqual(result, testResponse);
     assert.ok(mockServiceInstance.execute.calledWith(testId));

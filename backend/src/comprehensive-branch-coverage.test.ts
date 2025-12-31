@@ -11,7 +11,7 @@
  * are covered. When a module is imported, all its internal import statements
  * execute. By importing each module multiple times, we cover both branch 0
  * (first import) and branch 1+ (cached imports) for all internal imports.
- * 
+ *
  * CRITICAL: We set NODE_ENV='test' and SKIP_BOOTSTRAP to prevent main.ts
  * from calling bootstrap() which would try to connect to a real database.
  */
@@ -35,7 +35,7 @@ void describe('Comprehensive Branch Coverage', () => {
     process.env.NODE_ENV = 'test';
     process.env.SKIP_BOOTSTRAP = 'true';
     process.env.SKIP_DOTENV = 'true';
-    
+
     // Mock NestFactory.create to prevent real NestJS app creation
     if (!nestFactoryCreateStub) {
       nestFactoryCreateStub = sinon.stub(NestFactory, 'create').resolves({
@@ -395,7 +395,7 @@ void describe('Comprehensive Branch Coverage', () => {
     assert.strictEqual(getTasksContract3, getTasksContract4);
     assert.strictEqual(getTasksContract4, getTasksContract5);
   });
-  
+
   void test('cleanup', () => {
     // Restore mocks
     if (nestFactoryCreateStub) {
