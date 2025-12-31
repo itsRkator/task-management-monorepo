@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useTaskStore } from '@/store/taskStore';
 import { Button } from '@/components/ui/button';
 import {
@@ -57,19 +57,72 @@ const TaskListPage = () => {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState(filters.search || '');
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
 
+  // Debounce search input changes
+  useEffect(() => {
+    // Skip debounce on initial mount (fetchTasks is already called in the effect above)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = setTimeout(() => {
+      const filterValue = searchInput === '' ? undefined : searchInput;
+      setFilters({ search: filterValue });
+      fetchTasks({
+        search: filterValue,
+        page: 1,
+      });
+    }, 500); // 500ms debounce delay
+
+    // Cleanup timeout on unmount or when searchInput changes
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchInput, setFilters, fetchTasks]);
+
+  // Sync local search input with store filters when filters change externally (e.g., from URL params)
+  // This is necessary to keep the input in sync with external filter changes
+  useEffect(() => {
+    const currentSearch = filters.search || '';
+    // Only update if different to avoid unnecessary re-renders
+    if (currentSearch !== searchInput) {
+      setSearchInput(currentSearch);
+    }
+    // Intentionally omitting searchInput from deps to only sync when filters.search changes externally
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.search]);
+
   const handleFilterChange = (
     key: 'status' | 'priority' | 'search',
     value: string
   ) => {
+    if (key === 'search') {
+      // For search, update local state immediately (debounced API call handled by useEffect)
+      setSearchInput(value);
+      return;
+    }
+
+    // For status and priority, update immediately
     const filterValue = value === 'all' ? undefined : value || undefined;
     setFilters({ [key]: filterValue });
+    // fetchTasks will read the updated filters from the store
     fetchTasks({
-      ...filters,
       [key]: filterValue,
       page: 1,
     });
@@ -328,7 +381,7 @@ const TaskListPage = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none z-10" />
               <Input
                 placeholder="Search tasks..."
-                value={filters.search || ''}
+                value={searchInput}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
                 className="pl-10"
               />
