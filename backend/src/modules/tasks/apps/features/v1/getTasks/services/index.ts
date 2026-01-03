@@ -1,5 +1,5 @@
 /* c8 ignore start - import statements are covered by multiple test imports */
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, FindOperator } from 'typeorm';
 import {
@@ -22,8 +22,48 @@ export class GetTasksService {
   ) {}
 
   async execute(query: GetTasksQueryDto): Promise<GetTasksResponseDto> {
-    const page = query.page || 1;
-    const limit = query.limit || 10;
+    // Validate pagination parameters - validation should catch these, but be safe
+    // @Type(() => Number) should have transformed strings to numbers already
+    // Handle both number and potential string inputs (defensive)
+    const pageRaw = query.page !== undefined ? query.page : 1;
+    const limitRaw = query.limit !== undefined ? query.limit : 10;
+
+    // Convert to numbers if needed (defensive - transformation should have handled this)
+    const pageNum =
+      typeof pageRaw === 'number'
+        ? pageRaw
+        : typeof pageRaw === 'string'
+          ? parseInt(pageRaw, 10)
+          : 1;
+    const limitNum =
+      typeof limitRaw === 'number'
+        ? limitRaw
+        : typeof limitRaw === 'string'
+          ? parseInt(limitRaw, 10)
+          : 10;
+
+    // Reject invalid values instead of normalizing them
+    // Only validate if the value was explicitly provided and is invalid
+    if (query.page !== undefined) {
+      if (isNaN(pageNum) || pageNum < 1 || !Number.isInteger(pageNum)) {
+        throw new BadRequestException(
+          'Page must be a positive integer (minimum 1)',
+        );
+      }
+    }
+    if (query.limit !== undefined) {
+      if (isNaN(limitNum) || limitNum < 1 || !Number.isInteger(limitNum)) {
+        throw new BadRequestException(
+          'Limit must be a positive integer (minimum 1)',
+        );
+      }
+      if (limitNum > 100) {
+        throw new BadRequestException('Limit cannot exceed 100');
+      }
+    }
+
+    const page = pageNum;
+    const limit = limitNum;
     const skip = (page - 1) * limit;
 
     const where: {

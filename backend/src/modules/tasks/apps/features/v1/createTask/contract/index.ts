@@ -6,6 +6,7 @@ import {
   IsEnum,
   IsDateString,
   MaxLength,
+  MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 /* c8 ignore end */
@@ -19,6 +20,7 @@ export class CreateTaskRequestDto {
   })
   @IsString()
   @IsNotEmpty()
+  @MinLength(1)
   @MaxLength(255)
   title: string;
 
@@ -26,8 +28,8 @@ export class CreateTaskRequestDto {
     description: 'Task description',
     example: 'Write comprehensive documentation for the project',
   })
-  @IsString()
   @IsOptional()
+  @IsString({ message: 'Description must be a string' })
   description?: string;
 
   @ApiPropertyOptional({

@@ -1,5 +1,84 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+// Mock axios - needed for dynamic imports
+vi.mock('axios', () => {
+  // Create a mock AxiosError class that extends Error
+  class MockAxiosError extends Error {
+    response?: {
+      status?: number;
+      data?: any;
+    };
+    request?: any;
+    config?: any;
+    isAxiosError = true;
+
+    constructor(message?: string, code?: string, config?: any, request?: any, response?: any) {
+      super(message);
+      this.name = 'AxiosError';
+      this.response = response;
+      this.request = request;
+      this.config = config;
+      if (code) {
+        (this as any).code = code;
+      }
+    }
+  }
+
+  return {
+    default: {
+      create: vi.fn((config) => {
+        // Create a mock instance that uses the provided config
+        const mockAxiosInstance = {
+          get: vi.fn(),
+          post: vi.fn(),
+          put: vi.fn(),
+          delete: vi.fn(),
+          request: vi.fn(),
+          defaults: {
+            baseURL: config?.baseURL || '',
+            headers: {
+              'Content-Type': 'application/json',
+              ...config?.headers,
+            },
+          },
+          interceptors: {
+            request: {
+              use: vi.fn(),
+              eject: vi.fn(),
+            },
+            response: {
+              use: vi.fn(),
+              eject: vi.fn(),
+            },
+          },
+        };
+        return mockAxiosInstance;
+      }),
+      isCancel: vi.fn(),
+      CancelToken: {
+        source: vi.fn(() => ({
+          token: {},
+          cancel: vi.fn(),
+        })),
+      },
+    },
+    AxiosError: MockAxiosError,
+  };
+});
+
+// Mock axios-retry
+vi.mock('axios-retry', () => {
+  const mockAxiosRetryFunction = vi.fn();
+  mockAxiosRetryFunction.exponentialDelay = vi.fn();
+  mockAxiosRetryFunction.isNetworkOrIdempotentRequestError = vi.fn(() => false);
+  
+  return {
+    default: mockAxiosRetryFunction,
+    exponentialDelay: vi.fn(),
+    isNetworkOrIdempotentRequestError: vi.fn(() => false),
+  };
+});
+
 // This test file uses dynamic imports to test both branches of the ?? operator
 // for environment variables in api.ts
 

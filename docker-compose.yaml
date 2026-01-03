@@ -38,11 +38,18 @@ services:
       - ./backend/.env
     environment:
       # Override DB connection for Docker networking (use service name instead of localhost)
+      # NOTE: For production, use Docker secrets or .env files instead of hardcoded values
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
       - DB_NAME=task_management
+      # Optional: Configure rate limiting (defaults: 100 req/min)
+      # - THROTTLE_TTL=60000
+      # - THROTTLE_LIMIT=100
+      # Optional: Configure connection pooling (defaults: min=5, max=20)
+      # - DB_MAX_CONNECTIONS=20
+      # - DB_MIN_CONNECTIONS=5
     # Alternatively, you can specify all environment variables directly:
     # environment:
     #   - PORT=3000
@@ -82,7 +89,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://localhost:3000/ || exit 1']
+      test: ['CMD-SHELL', 'curl -f http://localhost:3000/api/health/liveness || exit 1']
       interval: 10s
       timeout: 5s
       retries: 5

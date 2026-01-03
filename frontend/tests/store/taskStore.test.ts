@@ -3,6 +3,7 @@ import { useTaskStore } from '@/store/taskStore';
 import { taskApi } from '@/lib/api';
 import { TaskStatus, TaskPriority, type Task, type GetTasksQuery } from '@/lib/api';
 import { AxiosError } from 'axios';
+import axios from 'axios';
 
 // Mock the API
 vi.mock('@/lib/api', async (importOriginal) => {
@@ -38,6 +39,10 @@ describe('useTaskStore', () => {
       filters: {},
     });
     vi.clearAllMocks();
+    // Reset axios.isCancel to return false by default
+    if (vi.isMockFunction(axios.isCancel)) {
+      vi.spyOn(axios, 'isCancel').mockReturnValue(false);
+    }
   });
 
   describe('Initial State', () => {
@@ -315,6 +320,54 @@ describe('useTaskStore', () => {
       expect(useTaskStore.getState().loading).toBe(false);
     });
 
+    it('should handle AxiosError with response but no data.message, using error.message - covers branch line 101-102', async () => {
+      // This covers the branch where error.response.data?.message is falsy but error.message is truthy
+      const error = new AxiosError('Error message from error.message');
+      error.response = {
+        data: {},
+        status: 500,
+      } as any;
+      mockTaskApi.getTasks.mockRejectedValue(error);
+
+      await useTaskStore.getState().fetchTasks();
+
+      // Should use error.message (second part of || chain)
+      expect(useTaskStore.getState().error).toBe('Error message from error.message');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with response but data is undefined, using error.message - covers branch line 101-102', async () => {
+      // This covers the branch where error.response.data is undefined (optional chaining short-circuits)
+      const error = new AxiosError('Error message from error.message');
+      error.response = {
+        data: undefined,
+        status: 500,
+      } as any;
+      mockTaskApi.getTasks.mockRejectedValue(error);
+
+      await useTaskStore.getState().fetchTasks();
+
+      // Should use error.message (second part of || chain, data?.message short-circuits)
+      expect(useTaskStore.getState().error).toBe('Error message from error.message');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with response but data is null, using error.message - covers branch line 101-102', async () => {
+      // This covers the branch where error.response.data is null (optional chaining short-circuits)
+      const error = new AxiosError('Error message from error.message');
+      error.response = {
+        data: null,
+        status: 500,
+      } as any;
+      mockTaskApi.getTasks.mockRejectedValue(error);
+
+      await useTaskStore.getState().fetchTasks();
+
+      // Should use error.message (second part of || chain, data?.message short-circuits on null)
+      expect(useTaskStore.getState().error).toBe('Error message from error.message');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
     it('should handle AxiosError without response data', async () => {
       const error = new AxiosError('Error message');
       mockTaskApi.getTasks.mockRejectedValue(error);
@@ -351,6 +404,63 @@ describe('useTaskStore', () => {
       expect(useTaskStore.getState().loading).toBe(false);
     });
 
+    it('should handle AxiosError with request but no response in fetchTasks', async () => {
+      const error = new AxiosError('Network error');
+      error.request = {} as any;
+      error.response = undefined;
+      mockTaskApi.getTasks.mockRejectedValue(error);
+
+      await useTaskStore.getState().fetchTasks();
+
+      // This covers the error.request branch (line 106)
+      // When error.message exists, it uses that (first part of || on line 106)
+      expect(useTaskStore.getState().error).toBe('Network error');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with request but no response and no error.message in fetchTasks - covers branch line 106', async () => {
+      // This covers the || branch when error.message is falsy
+      const error = new AxiosError('');
+      error.request = {} as any;
+      error.response = undefined;
+      error.message = ''; // Falsy message
+      mockTaskApi.getTasks.mockRejectedValue(error);
+
+      await useTaskStore.getState().fetchTasks();
+
+      // Should use fallback 'Network error' (second part of || on line 106)
+      expect(useTaskStore.getState().error).toBe('Network error');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with neither response nor request in fetchTasks - covers line 108', async () => {
+      const error = new AxiosError('Setup error');
+      error.request = undefined;
+      error.response = undefined;
+      mockTaskApi.getTasks.mockRejectedValue(error);
+
+      await useTaskStore.getState().fetchTasks();
+
+      // This covers the else branch (line 108) - error setting up request
+      expect(useTaskStore.getState().error).toBe('Setup error');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with neither response nor request and no error.message in fetchTasks - covers branch line 109', async () => {
+      // This covers the || branch when error.message is falsy
+      const error = new AxiosError('');
+      error.request = undefined;
+      error.response = undefined;
+      error.message = ''; // Falsy message
+      mockTaskApi.getTasks.mockRejectedValue(error);
+
+      await useTaskStore.getState().fetchTasks();
+
+      // Should use fallback 'An unexpected error occurred' (second part of || on line 109)
+      expect(useTaskStore.getState().error).toBe('An unexpected error occurred');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
     it('should set loading to true at start', async () => {
       const mockResponse = {
         data: [],
@@ -372,6 +482,40 @@ describe('useTaskStore', () => {
       const promise = useTaskStore.getState().fetchTasks();
       expect(useTaskStore.getState().loading).toBe(true);
       await promise;
+    });
+
+    it('should handle cancelled query parameter', async () => {
+      // Create a mock cancelled token
+      const cancelledQuery = { __cancelled: true };
+      vi.spyOn(axios, 'isCancel').mockReturnValue(true);
+      
+      await useTaskStore.getState().fetchTasks(cancelledQuery as any);
+      
+      // Should return early without setting loading
+      expect(useTaskStore.getState().loading).toBe(false);
+      vi.restoreAllMocks();
+    });
+
+    it('should handle cancelled request error', async () => {
+      class CancelError extends Error {
+        constructor(message?: string) {
+          super(message);
+          this.name = 'Cancel';
+        }
+      }
+      const cancelError = new CancelError('Request cancelled');
+      const isCancelSpy = vi.spyOn(axios, 'isCancel').mockImplementation((err) => {
+        return err === cancelError || err instanceof CancelError;
+      });
+      mockTaskApi.getTasks.mockRejectedValue(cancelError);
+      
+      await useTaskStore.getState().fetchTasks();
+      
+      // Should return early without setting error (covers line 90)
+      expect(useTaskStore.getState().error).toBeNull();
+      expect(useTaskStore.getState().loading).toBe(false);
+      expect(isCancelSpy).toHaveBeenCalledWith(cancelError);
+      isCancelSpy.mockRestore();
     });
   });
 
@@ -409,6 +553,69 @@ describe('useTaskStore', () => {
       await useTaskStore.getState().fetchTaskById(taskId);
 
       expect(useTaskStore.getState().error).toBe('Task not found');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with 404 status in fetchTaskById', async () => {
+      const taskId = '123';
+      const error = new AxiosError('Not found');
+      error.response = {
+        status: 404,
+        data: {},
+      } as any;
+      mockTaskApi.getTaskById.mockRejectedValue(error);
+
+      await useTaskStore.getState().fetchTaskById(taskId);
+
+      // This covers the error.response.status === 404 branch (line 141)
+      expect(useTaskStore.getState().error).toBe('Task not found');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with request but no response in fetchTaskById', async () => {
+      const taskId = '123';
+      const error = new AxiosError('Network error');
+      error.request = {} as any;
+      error.response = undefined;
+      mockTaskApi.getTaskById.mockRejectedValue(error);
+
+      await useTaskStore.getState().fetchTaskById(taskId);
+
+      // This covers the error.request branch (line 150)
+      // When error.message exists, it uses that (first part of || on line 150)
+      expect(useTaskStore.getState().error).toBe('Network error');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with request but no response and no error.message in fetchTaskById - covers branch line 150', async () => {
+      // This covers the || branch when error.message is falsy
+      const taskId = '123';
+      const error = new AxiosError('');
+      error.request = {} as any;
+      error.response = undefined;
+      error.message = ''; // Falsy message
+      mockTaskApi.getTaskById.mockRejectedValue(error);
+
+      await useTaskStore.getState().fetchTaskById(taskId);
+
+      // Should use fallback 'Network error: Unable to reach the server' (second part of || on line 150)
+      expect(useTaskStore.getState().error).toBe('Network error: Unable to reach the server');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with neither response nor request and no error.message in fetchTaskById - covers branch line 152', async () => {
+      // This covers the || branch when error.message is falsy
+      const taskId = '123';
+      const error = new AxiosError('');
+      error.request = undefined;
+      error.response = undefined;
+      error.message = ''; // Falsy message
+      mockTaskApi.getTaskById.mockRejectedValue(error);
+
+      await useTaskStore.getState().fetchTaskById(taskId);
+
+      // Should use fallback 'An unexpected error occurred' (second part of || on line 152)
+      expect(useTaskStore.getState().error).toBe('An unexpected error occurred');
       expect(useTaskStore.getState().loading).toBe(false);
     });
 
@@ -467,6 +674,26 @@ describe('useTaskStore', () => {
       expect(useTaskStore.getState().error).toBe('Failed to fetch task');
       expect(useTaskStore.getState().loading).toBe(false);
     });
+
+    it('should handle cancelled request error', async () => {
+      const taskId = '123';
+      class CancelError extends Error {
+        constructor(message?: string) {
+          super(message);
+          this.name = 'Cancel';
+        }
+      }
+      const cancelError = new CancelError('Request cancelled');
+      vi.spyOn(axios, 'isCancel').mockReturnValue(true);
+      mockTaskApi.getTaskById.mockRejectedValue(cancelError);
+      
+      await useTaskStore.getState().fetchTaskById(taskId);
+      
+      // Should return early without setting error
+      expect(useTaskStore.getState().error).toBeNull();
+      expect(useTaskStore.getState().loading).toBe(false);
+      vi.restoreAllMocks();
+    });
   });
 
   describe('createTask', () => {
@@ -511,6 +738,24 @@ describe('useTaskStore', () => {
       await expect(useTaskStore.getState().createTask(createData)).rejects.toThrow();
 
       expect(useTaskStore.getState().error).toBe('Validation failed');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with 400 status in createTask', async () => {
+      const createData = {
+        title: 'New Task',
+      };
+      const error = new AxiosError('Bad request');
+      error.response = {
+        status: 400,
+        data: {},
+      } as any;
+      mockTaskApi.createTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().createTask(createData)).rejects.toThrow();
+
+      // This covers the error.response.status === 400 branch (line 184)
+      expect(useTaskStore.getState().error).toBe('Invalid task data. Please check your input.');
       expect(useTaskStore.getState().loading).toBe(false);
     });
 
@@ -577,6 +822,78 @@ describe('useTaskStore', () => {
       expect(useTaskStore.getState().error).toBe('Failed to create task');
       expect(useTaskStore.getState().loading).toBe(false);
     });
+
+    it('should handle AxiosError with request but no response in createTask', async () => {
+      const createData = {
+        title: 'New Task',
+      };
+      const error = new AxiosError('Network error');
+      error.request = {} as any;
+      error.response = undefined;
+      mockTaskApi.createTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().createTask(createData)).rejects.toThrow();
+
+      // This covers the error.request branch (line 195)
+      expect(useTaskStore.getState().error).toBe('Network error');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with request but no response and no error.message in createTask - covers branch line 195', async () => {
+      // This covers the || branch when error.message is falsy
+      const createData = {
+        title: 'New Task',
+      };
+      const error = new AxiosError('');
+      error.request = {} as any;
+      error.response = undefined;
+      error.message = ''; // Falsy message
+      mockTaskApi.createTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().createTask(createData)).rejects.toThrow();
+
+      // Should use fallback 'Network error' (second part of || on line 195)
+      expect(useTaskStore.getState().error).toBe('Network error');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with neither response nor request and no error.message in createTask - covers branch line 197', async () => {
+      // This covers the || branch when error.message is falsy
+      const createData = {
+        title: 'New Task',
+      };
+      const error = new AxiosError('');
+      error.request = undefined;
+      error.response = undefined;
+      error.message = ''; // Falsy message
+      mockTaskApi.createTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().createTask(createData)).rejects.toThrow();
+
+      // Should use fallback 'An unexpected error occurred' (second part of || on line 197)
+      expect(useTaskStore.getState().error).toBe('An unexpected error occurred');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle cancelled request error', async () => {
+      const createData = {
+        title: 'New Task',
+      };
+      class CancelError extends Error {
+        constructor(message?: string) {
+          super(message);
+          this.name = 'Cancel';
+        }
+      }
+      const cancelError = new CancelError('Request cancelled');
+      vi.spyOn(axios, 'isCancel').mockReturnValue(true);
+      mockTaskApi.createTask.mockRejectedValue(cancelError);
+      
+      await expect(useTaskStore.getState().createTask(createData)).rejects.toThrow();
+      
+      expect(useTaskStore.getState().loading).toBe(false);
+      vi.restoreAllMocks();
+    });
   });
 
   describe('updateTask', () => {
@@ -599,7 +916,7 @@ describe('useTaskStore', () => {
       };
 
       mockTaskApi.updateTask.mockResolvedValue(mockTask);
-      mockTaskApi.getTasks.mockResolvedValue({
+      const mockGetTasksResponse = {
         data: [mockTask],
         meta: {
           page: 1,
@@ -607,7 +924,8 @@ describe('useTaskStore', () => {
           total: 1,
           totalPages: 1,
         },
-      });
+      };
+      mockTaskApi.getTasks.mockResolvedValue(mockGetTasksResponse);
 
       const result = await useTaskStore.getState().updateTask(taskId, updateData);
 
@@ -682,8 +1000,71 @@ describe('useTaskStore', () => {
 
       await expect(useTaskStore.getState().updateTask(taskId, updateData)).rejects.toThrow();
 
-      // This covers branch 158: error.response?.data?.message || error.message
+      // This covers branch: error.response?.data?.message || error.message (line 239-240)
       expect(useTaskStore.getState().error).toBe('Network error');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with response but no data.message, using error.message in updateTask - covers branch line 239-240', async () => {
+      // This covers the branch where error.response.data?.message is falsy but error.message is truthy
+      const taskId = '123';
+      const updateData = {
+        title: 'Updated Task',
+        status: TaskStatus.PENDING,
+      };
+      const error = new AxiosError('Error message from error.message');
+      error.response = {
+        data: {},
+        status: 500,
+      } as any;
+      mockTaskApi.updateTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().updateTask(taskId, updateData)).rejects.toThrow();
+
+      // Should use error.message (second part of || chain)
+      expect(useTaskStore.getState().error).toBe('Error message from error.message');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with response but data is undefined in updateTask - covers branch line 239-240', async () => {
+      // This covers the branch where error.response.data is undefined (optional chaining short-circuits)
+      const taskId = '123';
+      const updateData = {
+        title: 'Updated Task',
+        status: TaskStatus.PENDING,
+      };
+      const error = new AxiosError('Error message from error.message');
+      error.response = {
+        data: undefined,
+        status: 500,
+      } as any;
+      mockTaskApi.updateTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().updateTask(taskId, updateData)).rejects.toThrow();
+
+      // Should use error.message (second part of || chain, data?.message short-circuits)
+      expect(useTaskStore.getState().error).toBe('Error message from error.message');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with response but data is null in updateTask - covers branch line 239-240', async () => {
+      // This covers the branch where error.response.data is null (optional chaining short-circuits)
+      const taskId = '123';
+      const updateData = {
+        title: 'Updated Task',
+        status: TaskStatus.PENDING,
+      };
+      const error = new AxiosError('Error message from error.message');
+      error.response = {
+        data: null,
+        status: 500,
+      } as any;
+      mockTaskApi.updateTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().updateTask(taskId, updateData)).rejects.toThrow();
+
+      // Should use error.message (second part of || chain, data?.message short-circuits on null)
+      expect(useTaskStore.getState().error).toBe('Error message from error.message');
       expect(useTaskStore.getState().loading).toBe(false);
     });
 
@@ -706,6 +1087,144 @@ describe('useTaskStore', () => {
       expect(useTaskStore.getState().error).toBe('Failed to update task');
       expect(useTaskStore.getState().loading).toBe(false);
     });
+
+    it('should handle AxiosError with request but no response in updateTask', async () => {
+      const taskId = '123';
+      const updateData = {
+        title: 'Updated Task',
+        status: TaskStatus.PENDING,
+      };
+      const error = new AxiosError('Network error');
+      error.request = {} as any;
+      error.response = undefined;
+      mockTaskApi.updateTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().updateTask(taskId, updateData)).rejects.toThrow();
+
+      // This covers the error.request branch (line 244)
+      expect(useTaskStore.getState().error).toBe('Network error');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with request but no response and no error.message in updateTask - covers branch line 244', async () => {
+      // This covers the || branch when error.message is falsy
+      const taskId = '123';
+      const updateData = {
+        title: 'Updated Task',
+        status: TaskStatus.PENDING,
+      };
+      const error = new AxiosError('');
+      error.request = {} as any;
+      error.response = undefined;
+      error.message = ''; // Falsy message
+      mockTaskApi.updateTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().updateTask(taskId, updateData)).rejects.toThrow();
+
+      // Should use fallback 'Network error' (second part of || on line 244)
+      expect(useTaskStore.getState().error).toBe('Network error');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with neither response nor request in updateTask - covers lines 246', async () => {
+      const taskId = '123';
+      const updateData = {
+        title: 'Updated Task',
+        status: TaskStatus.PENDING,
+      };
+      const error = new AxiosError('Setup error');
+      error.request = undefined;
+      error.response = undefined;
+      mockTaskApi.updateTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().updateTask(taskId, updateData)).rejects.toThrow();
+
+      // This covers the else branch (line 246) - error setting up request
+      expect(useTaskStore.getState().error).toBe('Setup error');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with neither response nor request and no error.message in updateTask - covers branch line 246', async () => {
+      // This covers the || branch when error.message is falsy
+      const taskId = '123';
+      const updateData = {
+        title: 'Updated Task',
+        status: TaskStatus.PENDING,
+      };
+      const error = new AxiosError('');
+      error.request = undefined;
+      error.response = undefined;
+      error.message = ''; // Falsy message
+      mockTaskApi.updateTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().updateTask(taskId, updateData)).rejects.toThrow();
+
+      // Should use fallback 'An unexpected error occurred' (second part of || on line 246)
+      expect(useTaskStore.getState().error).toBe('An unexpected error occurred');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with 404 status in updateTask', async () => {
+      const taskId = '123';
+      const updateData = {
+        title: 'Updated Task',
+        status: TaskStatus.PENDING,
+      };
+      const error = new AxiosError('Not found');
+      error.response = {
+        status: 404,
+        data: {},
+      } as any;
+      mockTaskApi.updateTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().updateTask(taskId, updateData)).rejects.toThrow();
+
+      // This covers the error.response.status === 404 branch (line 231)
+      expect(useTaskStore.getState().error).toBe('Task not found');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with 400 status in updateTask', async () => {
+      const taskId = '123';
+      const updateData = {
+        title: 'Updated Task',
+        status: TaskStatus.PENDING,
+      };
+      const error = new AxiosError('Bad request');
+      error.response = {
+        status: 400,
+        data: {},
+      } as any;
+      mockTaskApi.updateTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().updateTask(taskId, updateData)).rejects.toThrow();
+
+      // This covers the error.response.status === 400 branch (line 233)
+      expect(useTaskStore.getState().error).toBe('Invalid task data. Please check your input.');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle cancelled request error', async () => {
+      const taskId = '123';
+      const updateData = {
+        title: 'Updated Task',
+        status: TaskStatus.PENDING,
+      };
+      class CancelError extends Error {
+        constructor(message?: string) {
+          super(message);
+          this.name = 'Cancel';
+        }
+      }
+      const cancelError = new CancelError('Request cancelled');
+      vi.spyOn(axios, 'isCancel').mockReturnValue(true);
+      mockTaskApi.updateTask.mockRejectedValue(cancelError);
+      
+      await expect(useTaskStore.getState().updateTask(taskId, updateData)).rejects.toThrow();
+      
+      expect(useTaskStore.getState().loading).toBe(false);
+      vi.restoreAllMocks();
+    });
   });
 
   describe('deleteTask', () => {
@@ -716,7 +1235,7 @@ describe('useTaskStore', () => {
         message: 'Task deleted',
         id: taskId,
       });
-      mockTaskApi.getTasks.mockResolvedValue({
+      const mockGetTasksResponse = {
         data: [],
         meta: {
           page: 1,
@@ -724,7 +1243,8 @@ describe('useTaskStore', () => {
           total: 0,
           totalPages: 0,
         },
-      });
+      };
+      mockTaskApi.getTasks.mockResolvedValue(mockGetTasksResponse);
 
       await useTaskStore.getState().deleteTask(taskId);
 
@@ -781,8 +1301,59 @@ describe('useTaskStore', () => {
 
       await expect(useTaskStore.getState().deleteTask(taskId)).rejects.toThrow();
 
-      // This covers branch 184: error.response?.data?.message || error.message
+      // This covers branch: error.response?.data?.message || error.message (line 284-285)
       expect(useTaskStore.getState().error).toBe('Network error');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with response but no data.message, using error.message in deleteTask - covers branch line 284-285', async () => {
+      // This covers the branch where error.response.data?.message is falsy but error.message is truthy
+      const taskId = '123';
+      const error = new AxiosError('Error message from error.message');
+      error.response = {
+        data: {},
+        status: 500,
+      } as any;
+      mockTaskApi.deleteTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().deleteTask(taskId)).rejects.toThrow();
+
+      // Should use error.message (second part of || chain)
+      expect(useTaskStore.getState().error).toBe('Error message from error.message');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with response but data is undefined in deleteTask - covers branch line 284-285', async () => {
+      // This covers the branch where error.response.data is undefined (optional chaining short-circuits)
+      const taskId = '123';
+      const error = new AxiosError('Error message from error.message');
+      error.response = {
+        data: undefined,
+        status: 500,
+      } as any;
+      mockTaskApi.deleteTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().deleteTask(taskId)).rejects.toThrow();
+
+      // Should use error.message (second part of || chain, data?.message short-circuits)
+      expect(useTaskStore.getState().error).toBe('Error message from error.message');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with response but data is null in deleteTask - covers branch line 284-285', async () => {
+      // This covers the branch where error.response.data is null (optional chaining short-circuits)
+      const taskId = '123';
+      const error = new AxiosError('Error message from error.message');
+      error.response = {
+        data: null,
+        status: 500,
+      } as any;
+      mockTaskApi.deleteTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().deleteTask(taskId)).rejects.toThrow();
+
+      // Should use error.message (second part of || chain, data?.message short-circuits on null)
+      expect(useTaskStore.getState().error).toBe('Error message from error.message');
       expect(useTaskStore.getState().loading).toBe(false);
     });
 
@@ -800,6 +1371,89 @@ describe('useTaskStore', () => {
       // This covers branch 184: error.response?.data?.message || error.message || 'Failed to delete task'
       expect(useTaskStore.getState().error).toBe('Failed to delete task');
       expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with 404 status in deleteTask', async () => {
+      const taskId = '123';
+      const error = new AxiosError('Not found');
+      error.response = {
+        status: 404,
+        data: {},
+      } as any;
+      mockTaskApi.deleteTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().deleteTask(taskId)).rejects.toThrow();
+
+      // This covers the error.response.status === 404 branch (line 280)
+      expect(useTaskStore.getState().error).toBe('Task not found');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with request but no response in deleteTask', async () => {
+      const taskId = '123';
+      const error = new AxiosError('');
+      error.request = {} as any;
+      error.response = undefined;
+      error.message = ''; // No message to trigger the fallback
+      mockTaskApi.deleteTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().deleteTask(taskId)).rejects.toThrow();
+
+      // This covers the error.request branch (line 289)
+      // When error.message is empty, it uses the fallback
+      expect(useTaskStore.getState().error).toBe('Network error: Unable to reach the server');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with neither response nor request in deleteTask - covers line 291', async () => {
+      const taskId = '123';
+      const error = new AxiosError('Setup error');
+      error.request = undefined;
+      error.response = undefined;
+      mockTaskApi.deleteTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().deleteTask(taskId)).rejects.toThrow();
+
+      // This covers the else branch (line 291) - error setting up request
+      expect(useTaskStore.getState().error).toBe('Setup error');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle AxiosError with neither response nor request and no error.message in deleteTask - covers branch line 291', async () => {
+      // This covers the || branch when error.message is falsy
+      const taskId = '123';
+      const error = new AxiosError('');
+      error.request = undefined;
+      error.response = undefined;
+      error.message = ''; // Falsy message
+      mockTaskApi.deleteTask.mockRejectedValue(error);
+
+      await expect(useTaskStore.getState().deleteTask(taskId)).rejects.toThrow();
+
+      // Should use fallback 'An unexpected error occurred' (second part of || on line 291)
+      expect(useTaskStore.getState().error).toBe('An unexpected error occurred');
+      expect(useTaskStore.getState().loading).toBe(false);
+    });
+
+    it('should handle cancelled request error', async () => {
+      const taskId = '123';
+      class CancelError extends Error {
+        constructor(message?: string) {
+          super(message);
+          this.name = 'Cancel';
+        }
+      }
+      const cancelError = new CancelError('Request cancelled');
+      const isCancelSpy = vi.spyOn(axios, 'isCancel').mockReturnValue(true);
+      mockTaskApi.deleteTask.mockRejectedValue(cancelError);
+      
+      await useTaskStore.getState().deleteTask(taskId);
+      
+      // Should return early without setting error
+      expect(useTaskStore.getState().error).toBeNull();
+      expect(useTaskStore.getState().loading).toBe(false);
+      expect(isCancelSpy).toHaveBeenCalledWith(cancelError);
+      isCancelSpy.mockRestore();
     });
   });
 });

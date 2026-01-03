@@ -7,9 +7,20 @@ import { Task } from '../../../../../entities/task.entity';
 void describe('RemoveTaskService', () => {
   let service: RemoveTaskService;
 
+  const mockTransactionalEntityManager = {
+    findOne: jest.fn(),
+    remove: jest.fn(),
+  };
+
   const mockRepository = {
     findOne: jest.fn(),
     remove: jest.fn(),
+    manager: {
+      transaction: jest.fn(async (callback) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
+        return await callback(mockTransactionalEntityManager);
+      }),
+    },
   };
 
   void beforeEach(async () => {
@@ -47,33 +58,36 @@ void describe('RemoveTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.findOne.mockResolvedValue(mockTask);
-    mockRepository.remove.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.findOne.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.remove.mockResolvedValue(mockTask);
 
     const result = await service.execute(taskId);
 
     expect(result.id).toBe(taskId);
     expect(result.message).toBe('Task deleted successfully');
-    expect(mockRepository.findOne).toHaveBeenCalledWith({
+    expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Task, {
       where: { id: taskId },
     });
-    expect(mockRepository.remove).toHaveBeenCalledWith(mockTask);
-    expect(mockRepository.findOne).toHaveBeenCalledTimes(1);
-    expect(mockRepository.remove).toHaveBeenCalledTimes(1);
+    expect(mockTransactionalEntityManager.remove).toHaveBeenCalledWith(
+      Task,
+      mockTask,
+    );
+    expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledTimes(1);
+    expect(mockTransactionalEntityManager.remove).toHaveBeenCalledTimes(1);
   });
 
   void it('should throw NotFoundException when task does not exist', async () => {
     const taskId = 'non-existent-id';
 
-    mockRepository.findOne.mockResolvedValue(null);
+    mockTransactionalEntityManager.findOne.mockResolvedValue(null);
 
     await expect(service.execute(taskId)).rejects.toThrow(NotFoundException);
     await expect(service.execute(taskId)).rejects.toThrow(
       `Task with ID ${taskId} not found`,
     );
-    expect(mockRepository.findOne).toHaveBeenCalledWith({
+    expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Task, {
       where: { id: taskId },
     });
-    expect(mockRepository.remove).not.toHaveBeenCalled();
+    expect(mockTransactionalEntityManager.remove).not.toHaveBeenCalled();
   });
 });

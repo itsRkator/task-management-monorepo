@@ -14,17 +14,24 @@ export class RemoveTaskService {
   ) {}
 
   async execute(id: string): Promise<RemoveTaskResponseDto> {
-    const task = await this.taskRepository.findOne({ where: { id } });
+    // Use transaction for data consistency (reliability fix)
+    return await this.taskRepository.manager.transaction(
+      async (transactionalEntityManager) => {
+        const task = await transactionalEntityManager.findOne(Task, {
+          where: { id },
+        });
 
-    if (!task) {
-      throw new NotFoundException(`Task with ID ${id} not found`);
-    }
+        if (!task) {
+          throw new NotFoundException(`Task with ID ${id} not found`);
+        }
 
-    await this.taskRepository.remove(task);
+        await transactionalEntityManager.remove(Task, task);
 
-    return {
-      message: 'Task deleted successfully',
-      id: id,
-    };
+        return {
+          message: 'Task deleted successfully',
+          id: id,
+        };
+      },
+    );
   }
 }

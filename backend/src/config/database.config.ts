@@ -1,7 +1,6 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Task } from '../modules/tasks/entities/task.entity';
-import { Logger } from '@nestjs/common';
 import { readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -12,11 +11,6 @@ export const getDatabaseConfig = (
   const synchronize = configService.get<string>('DB_SYNCHRONIZE', 'false');
   const logging = configService.get<string>('DB_LOGGING', 'false');
   const migrationsRun = configService.get<string>('ENV', 'development');
-
-  Logger.log('connectionString', connectionString);
-  Logger.log('synchronize', synchronize);
-  Logger.log('logging', logging);
-  Logger.log('migrationsRun', migrationsRun);
 
   // Function to get migration files excluding test files
   const getMigrations = (): string[] => {
@@ -40,6 +34,15 @@ export const getDatabaseConfig = (
     return migrationFiles;
   };
 
+  // Get connection pool settings from environment or use defaults
+  const maxConnections = configService.get<number>('DB_MAX_CONNECTIONS', 20);
+  const minConnections = configService.get<number>('DB_MIN_CONNECTIONS', 5);
+  const connectionTimeout = configService.get<number>(
+    'DB_CONNECTION_TIMEOUT',
+    2000,
+  );
+  const idleTimeout = configService.get<number>('DB_IDLE_TIMEOUT', 30000);
+
   return {
     type: 'postgres',
     url: connectionString,
@@ -48,5 +51,12 @@ export const getDatabaseConfig = (
     migrations: getMigrations(),
     migrationsRun: migrationsRun === 'production',
     logging: logging === 'true',
+    // Connection pooling configuration
+    extra: {
+      max: maxConnections,
+      min: minConnections,
+      idleTimeoutMillis: idleTimeout,
+      connectionTimeoutMillis: connectionTimeout,
+    },
   };
 };

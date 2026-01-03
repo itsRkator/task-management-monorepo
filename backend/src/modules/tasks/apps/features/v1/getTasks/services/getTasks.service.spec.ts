@@ -258,4 +258,128 @@ void describe('GetTasksService', () => {
       'DESC',
     );
   });
+
+  void it('should throw BadRequestException when page is invalid', async () => {
+    const query: GetTasksQueryDto = {
+      page: -1,
+    };
+
+    await expect(service.execute(query)).rejects.toThrow(
+      'Page must be a positive integer',
+    );
+  });
+
+  void it('should throw BadRequestException when page is not an integer', async () => {
+    const query: GetTasksQueryDto = {
+      page: 1.5,
+    };
+
+    await expect(service.execute(query)).rejects.toThrow(
+      'Page must be a positive integer',
+    );
+  });
+
+  void it('should throw BadRequestException when limit is invalid', async () => {
+    const query: GetTasksQueryDto = {
+      limit: -1,
+    };
+
+    await expect(service.execute(query)).rejects.toThrow(
+      'Limit must be a positive integer',
+    );
+  });
+
+  void it('should throw BadRequestException when limit is not an integer', async () => {
+    const query: GetTasksQueryDto = {
+      limit: 1.5,
+    };
+
+    await expect(service.execute(query)).rejects.toThrow(
+      'Limit must be a positive integer',
+    );
+  });
+
+  void it('should throw BadRequestException when limit exceeds 100', async () => {
+    const query: GetTasksQueryDto = {
+      limit: 101,
+    };
+
+    await expect(service.execute(query)).rejects.toThrow(
+      'Limit cannot exceed 100',
+    );
+  });
+
+  void it('should handle page as string and convert to number', async () => {
+    const query = {
+      page: '2' as unknown as number,
+      limit: 10,
+    } as GetTasksQueryDto;
+
+    mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+
+    await service.execute(query);
+
+    expect(mockQueryBuilder.skip).toHaveBeenCalledWith(10); // (2-1) * 10
+  });
+
+  void it('should handle limit as string and convert to number', async () => {
+    const query = {
+      page: 1,
+      limit: '20' as unknown as number,
+    } as GetTasksQueryDto;
+
+    mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+
+    await service.execute(query);
+
+    expect(mockQueryBuilder.take).toHaveBeenCalledWith(20);
+  });
+
+  void it('should use default page when page is undefined', async () => {
+    const query: GetTasksQueryDto = {
+      limit: 10,
+    };
+
+    mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+
+    await service.execute(query);
+
+    expect(mockQueryBuilder.skip).toHaveBeenCalledWith(0); // (1-1) * 10
+  });
+
+  void it('should use default limit when limit is undefined', async () => {
+    const query: GetTasksQueryDto = {
+      page: 1,
+    };
+
+    mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+
+    await service.execute(query);
+
+    expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
+  });
+
+  void it('should handle pageRaw as non-number non-string (defaults to 1)', async () => {
+    const query = {
+      page: true as unknown as number,
+    } as GetTasksQueryDto;
+
+    mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+
+    await service.execute(query);
+
+    expect(mockQueryBuilder.skip).toHaveBeenCalledWith(0); // (1-1) * 10
+  });
+
+  void it('should handle limitRaw as non-number non-string (defaults to 10)', async () => {
+    const query = {
+      limit: true as unknown as number,
+    } as GetTasksQueryDto;
+
+    mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+
+    await service.execute(query);
+
+    expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
+  });
 });

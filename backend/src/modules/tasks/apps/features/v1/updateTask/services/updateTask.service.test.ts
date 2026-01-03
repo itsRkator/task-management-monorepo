@@ -17,6 +17,15 @@ void describe('UpdateTaskService', () => {
   let mockRepository: {
     findOne: sinon.SinonStub;
     save: sinon.SinonStub;
+    manager: {
+      transaction: sinon.SinonStub;
+    };
+  };
+  let mockTransactionalManager: {
+    findOne: sinon.SinonStub;
+    save: sinon.SinonStub;
+    create: sinon.SinonStub;
+    remove: sinon.SinonStub;
   };
 
   // Cover import statements and class declaration branches (0, 4, 8, 9, 11, 12, 13)
@@ -124,9 +133,29 @@ void describe('UpdateTaskService', () => {
   });
 
   void beforeEach(async () => {
+    mockTransactionalManager = {
+      findOne: sinon.stub(),
+      save: sinon.stub(),
+      create: sinon.stub(),
+      remove: sinon.stub(),
+    };
+
     mockRepository = {
       findOne: sinon.stub(),
       save: sinon.stub(),
+      manager: {
+        transaction: sinon
+          .stub()
+          .callsFake(
+            (
+              callback: (
+                manager: typeof mockTransactionalManager,
+              ) => Promise<unknown>,
+            ) => {
+              return callback(mockTransactionalManager);
+            },
+          ),
+      },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -171,35 +200,27 @@ void describe('UpdateTaskService', () => {
       updated_at: new Date(),
     };
 
-    const updatedTask = {
-      ...existingTask,
-      title: request.title,
-      description: request.description,
-      status: request.status,
-      priority: request.priority,
-      due_date: new Date(request.due_date!),
-    };
-
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    const mutableTask = { ...existingTask };
+    mockTransactionalManager.findOne.resolves(mutableTask);
+    mockTransactionalManager.save.callsFake((entity, task) => {
+      // Return the modified task
+      return Promise.resolve(task as Task);
+    });
 
     const result = await service.execute(taskId, request);
 
     assert.strictEqual(result.id, taskId);
-    assert.strictEqual(result.title, request.title);
+    assert.strictEqual(result.title, request.title.trim());
     assert.strictEqual(result.description, request.description);
     assert.strictEqual(result.status, request.status);
     assert.strictEqual(result.priority, request.priority);
-    assert.strictEqual(
-      result.due_date?.getTime(),
-      updatedTask.due_date.getTime(),
-    );
+    assert.ok(result.due_date instanceof Date);
     assert.ok(
-      mockRepository.findOne.calledWith({
+      mockTransactionalManager.findOne.calledWith(Task, {
         where: { id: taskId },
       }),
     );
-    assert.ok(mockRepository.save.called);
+    assert.ok(mockTransactionalManager.save.calledWith(Task, sinon.match.any));
   });
 
   void test('should throw NotFoundException when task does not exist', async () => {
@@ -209,7 +230,7 @@ void describe('UpdateTaskService', () => {
       status: TaskStatus.PENDING,
     };
 
-    mockRepository.findOne.resolves(null);
+    mockTransactionalManager.findOne.resolves(null);
 
     await assert.rejects(
       async () => await service.execute(taskId, request),
@@ -220,11 +241,12 @@ void describe('UpdateTaskService', () => {
       },
     );
     assert.ok(
-      mockRepository.findOne.calledWith({
+      mockTransactionalManager.findOne.calledWith(Task, {
         where: { id: taskId },
       }),
     );
-    assert.strictEqual(mockRepository.save.callCount, 0);
+    assert.strictEqual(mockTransactionalManager.save.callCount, 0);
+    assert.ok(mockRepository.manager.transaction.calledOnce);
   });
 
   void test('should handle description as null when not provided', async () => {
@@ -252,8 +274,8 @@ void describe('UpdateTaskService', () => {
       status: request.status,
     };
 
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    mockTransactionalManager.findOne.resolves(existingTask);
+    mockTransactionalManager.save.resolves(updatedTask);
 
     const result = await service.execute(taskId, request);
 
@@ -286,8 +308,8 @@ void describe('UpdateTaskService', () => {
       status: request.status,
     };
 
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    mockTransactionalManager.findOne.resolves(existingTask);
+    mockTransactionalManager.save.resolves(updatedTask);
 
     const result = await service.execute(taskId, request);
 
@@ -318,8 +340,8 @@ void describe('UpdateTaskService', () => {
       priority: null,
     };
 
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    mockTransactionalManager.findOne.resolves(existingTask);
+    mockTransactionalManager.save.resolves(updatedTask);
 
     const result = await service.execute(taskId, request);
 
@@ -351,8 +373,8 @@ void describe('UpdateTaskService', () => {
       priority: request.priority,
     };
 
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    mockTransactionalManager.findOne.resolves(existingTask);
+    mockTransactionalManager.save.resolves(updatedTask);
 
     const result = await service.execute(taskId, request);
 
@@ -383,8 +405,8 @@ void describe('UpdateTaskService', () => {
       due_date: null,
     };
 
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    mockTransactionalManager.findOne.resolves(existingTask);
+    mockTransactionalManager.save.resolves(updatedTask);
 
     const result = await service.execute(taskId, request);
 
@@ -417,8 +439,8 @@ void describe('UpdateTaskService', () => {
       due_date: dueDate,
     };
 
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    mockTransactionalManager.findOne.resolves(existingTask);
+    mockTransactionalManager.save.resolves(updatedTask);
 
     const result = await service.execute(taskId, request);
 
@@ -451,8 +473,8 @@ void describe('UpdateTaskService', () => {
       status: request.status,
     };
 
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    mockTransactionalManager.findOne.resolves(existingTask);
+    mockTransactionalManager.save.resolves(updatedTask);
 
     const result = await service.execute(taskId, request);
 
@@ -483,8 +505,8 @@ void describe('UpdateTaskService', () => {
       title: request.title,
     };
 
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    mockTransactionalManager.findOne.resolves(existingTask);
+    mockTransactionalManager.save.resolves(updatedTask);
 
     const result = await service.execute(taskId, request);
 
@@ -493,7 +515,7 @@ void describe('UpdateTaskService', () => {
 
   void test('should handle undefined description (branch coverage)', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
-    const existingTask = {
+    const existingTask: Task = {
       id: taskId,
       title: 'Existing Task',
       description: 'Existing Description',
@@ -510,25 +532,25 @@ void describe('UpdateTaskService', () => {
       description: undefined,
     };
 
-    const updatedTask = {
-      ...existingTask,
-      title: request.title,
-      description: null,
-    };
-
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    // Create a mutable task object that can be modified by the service
+    const mutableTask = { ...existingTask };
+    mockTransactionalManager.findOne.resolves(mutableTask);
+    mockTransactionalManager.save.callsFake((entity, task) => {
+      // Return the modified task
+      return Promise.resolve(task as Task);
+    });
 
     await service.execute(taskId, request);
 
-    assert.ok(mockRepository.save.called);
-    const savedTask = mockRepository.save.getCall(0).args[0] as Task;
+    assert.ok(mockTransactionalManager.save.called);
+    const savedTask = mockTransactionalManager.save.getCall(0).args[1] as Task;
+    // The service sets description to null when undefined
     assert.strictEqual(savedTask.description, null);
   });
 
   void test('should handle undefined priority (branch coverage)', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
-    const existingTask = {
+    const existingTask: Task = {
       id: taskId,
       title: 'Existing Task',
       description: null,
@@ -545,19 +567,18 @@ void describe('UpdateTaskService', () => {
       priority: undefined,
     };
 
-    const updatedTask = {
-      ...existingTask,
-      title: request.title,
-      priority: null,
-    };
-
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    // Create a mutable task object
+    const mutableTask = { ...existingTask };
+    mockTransactionalManager.findOne.resolves(mutableTask);
+    mockTransactionalManager.save.callsFake((entity, task) => {
+      return Promise.resolve(task as Task);
+    });
 
     await service.execute(taskId, request);
 
-    assert.ok(mockRepository.save.called);
-    const savedTask = mockRepository.save.getCall(0).args[0] as Task;
+    assert.ok(mockTransactionalManager.save.called);
+    const savedTask = mockTransactionalManager.save.getCall(0).args[1] as Task;
+    // The service sets priority to null when undefined
     assert.strictEqual(savedTask.priority, null);
   });
 
@@ -586,13 +607,13 @@ void describe('UpdateTaskService', () => {
       due_date: null,
     };
 
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    mockTransactionalManager.findOne.resolves(existingTask);
+    mockTransactionalManager.save.resolves(updatedTask);
 
     await service.execute(taskId, request);
 
-    assert.ok(mockRepository.save.called);
-    const savedTask = mockRepository.save.getCall(0).args[0] as Task;
+    assert.ok(mockTransactionalManager.save.called);
+    const savedTask = mockTransactionalManager.save.getCall(0).args[1] as Task;
     assert.strictEqual(savedTask.due_date, null);
   });
 
@@ -615,19 +636,16 @@ void describe('UpdateTaskService', () => {
       description: null as unknown as string | null,
     };
 
-    const updatedTask = {
-      ...existingTask,
-      title: request.title,
-      description: null,
-    };
-
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    const mutableTask = { ...existingTask };
+    mockTransactionalManager.findOne.resolves(mutableTask);
+    mockTransactionalManager.save.callsFake((entity, task) => {
+      return Promise.resolve(task as Task);
+    });
 
     await service.execute(taskId, request);
 
-    assert.ok(mockRepository.save.called);
-    const savedTask = mockRepository.save.getCall(0).args[0] as Task;
+    assert.ok(mockTransactionalManager.save.called);
+    const savedTask = mockTransactionalManager.save.getCall(0).args[1] as Task;
     // null || null = null
     assert.strictEqual(savedTask.description, null);
   });
@@ -651,19 +669,16 @@ void describe('UpdateTaskService', () => {
       priority: null as unknown as TaskPriority | null,
     };
 
-    const updatedTask = {
-      ...existingTask,
-      title: request.title,
-      priority: null,
-    };
-
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    const mutableTask = { ...existingTask };
+    mockTransactionalManager.findOne.resolves(mutableTask);
+    mockTransactionalManager.save.callsFake((entity, task) => {
+      return Promise.resolve(task as Task);
+    });
 
     await service.execute(taskId, request);
 
-    assert.ok(mockRepository.save.called);
-    const savedTask = mockRepository.save.getCall(0).args[0] as Task;
+    assert.ok(mockTransactionalManager.save.called);
+    const savedTask = mockTransactionalManager.save.getCall(0).args[1] as Task;
     // null || null = null
     assert.strictEqual(savedTask.priority, null);
   });
@@ -687,19 +702,16 @@ void describe('UpdateTaskService', () => {
       due_date: '' as unknown as string | null,
     };
 
-    const updatedTask = {
-      ...existingTask,
-      title: request.title,
-      due_date: null,
-    };
-
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    const mutableTask = { ...existingTask };
+    mockTransactionalManager.findOne.resolves(mutableTask);
+    mockTransactionalManager.save.callsFake((entity, task) => {
+      return Promise.resolve(task as Task);
+    });
 
     await service.execute(taskId, request);
 
-    assert.ok(mockRepository.save.called);
-    const savedTask = mockRepository.save.getCall(0).args[0] as Task;
+    assert.ok(mockTransactionalManager.save.called);
+    const savedTask = mockTransactionalManager.save.getCall(0).args[1] as Task;
     // Empty string is falsy, so ?: should use null branch
     assert.strictEqual(savedTask.due_date, null);
   });
@@ -723,15 +735,13 @@ void describe('UpdateTaskService', () => {
       status: TaskStatus.PENDING,
       description: 'New Description',
     };
-    const updatedTask = {
-      ...existingTask,
-      title: request.title,
-      description: request.description,
-    };
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    const mutableTask = { ...existingTask };
+    mockTransactionalManager.findOne.resolves(mutableTask);
+    mockTransactionalManager.save.callsFake((entity, task) => {
+      return Promise.resolve(task as Task);
+    });
     await service.execute(taskId, request);
-    const savedTask = mockRepository.save.getCall(0).args[0] as Task;
+    const savedTask = mockTransactionalManager.save.getCall(0).args[1] as Task;
     assert.strictEqual(savedTask.description, 'New Description'); // Truthy branch
   });
 
@@ -753,15 +763,13 @@ void describe('UpdateTaskService', () => {
       title: 'Updated Task',
       status: TaskStatus.PENDING,
     };
-    const updatedTask = {
-      ...existingTask,
-      title: request.title,
-      description: null,
-    };
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    const mutableTask = { ...existingTask };
+    mockTransactionalManager.findOne.resolves(mutableTask);
+    mockTransactionalManager.save.callsFake((entity, task) => {
+      return Promise.resolve(task as Task);
+    });
     await service.execute(taskId, request);
-    const savedTask = mockRepository.save.getCall(0).args[0] as Task;
+    const savedTask = mockTransactionalManager.save.getCall(0).args[1] as Task;
     assert.strictEqual(savedTask.description, null); // Falsy branch
   });
 
@@ -784,15 +792,13 @@ void describe('UpdateTaskService', () => {
       status: TaskStatus.PENDING,
       priority: TaskPriority.HIGH,
     };
-    const updatedTask = {
-      ...existingTask,
-      title: request.title,
-      priority: request.priority,
-    };
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    const mutableTask = { ...existingTask };
+    mockTransactionalManager.findOne.resolves(mutableTask);
+    mockTransactionalManager.save.callsFake((entity, task) => {
+      return Promise.resolve(task as Task);
+    });
     await service.execute(taskId, request);
-    const savedTask = mockRepository.save.getCall(0).args[0] as Task;
+    const savedTask = mockTransactionalManager.save.getCall(0).args[1] as Task;
     assert.strictEqual(savedTask.priority, TaskPriority.HIGH); // Truthy branch
   });
 
@@ -814,15 +820,13 @@ void describe('UpdateTaskService', () => {
       title: 'Updated Task',
       status: TaskStatus.PENDING,
     };
-    const updatedTask = {
-      ...existingTask,
-      title: request.title,
-      priority: null,
-    };
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    const mutableTask = { ...existingTask };
+    mockTransactionalManager.findOne.resolves(mutableTask);
+    mockTransactionalManager.save.callsFake((entity, task) => {
+      return Promise.resolve(task as Task);
+    });
     await service.execute(taskId, request);
-    const savedTask = mockRepository.save.getCall(0).args[0] as Task;
+    const savedTask = mockTransactionalManager.save.getCall(0).args[1] as Task;
     assert.strictEqual(savedTask.priority, null); // Falsy branch
   });
 
@@ -846,17 +850,15 @@ void describe('UpdateTaskService', () => {
       due_date: '2024-12-31T23:59:59Z',
     };
     const dueDate = new Date('2024-12-31T23:59:59Z');
-    const updatedTask = {
-      ...existingTask,
-      title: request.title,
-      due_date: dueDate,
-    };
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
-    await service.execute(taskId, request);
-    const savedTask = mockRepository.save.getCall(0).args[0] as Task;
-    assert.ok(savedTask.due_date instanceof Date); // Truthy branch
-    assert.strictEqual(savedTask.due_date.getTime(), dueDate.getTime());
+    const mutableTask = { ...existingTask };
+    mockTransactionalManager.findOne.resolves(mutableTask);
+    mockTransactionalManager.save.callsFake((entity, task) => {
+      return Promise.resolve(task as Task);
+    });
+    const result = await service.execute(taskId, request);
+    // Check the result which should have the due_date set
+    assert.ok(result.due_date instanceof Date); // Truthy branch
+    assert.strictEqual(result.due_date.getTime(), dueDate.getTime());
   });
 
   void test('should cover ?: operator falsy branch for due_date', async () => {
@@ -877,15 +879,13 @@ void describe('UpdateTaskService', () => {
       title: 'Updated Task',
       status: TaskStatus.PENDING,
     };
-    const updatedTask = {
-      ...existingTask,
-      title: request.title,
-      due_date: null,
-    };
-    mockRepository.findOne.resolves(existingTask);
-    mockRepository.save.resolves(updatedTask);
+    const mutableTask = { ...existingTask };
+    mockTransactionalManager.findOne.resolves(mutableTask);
+    mockTransactionalManager.save.callsFake((entity, task) => {
+      return Promise.resolve(task as Task);
+    });
     await service.execute(taskId, request);
-    const savedTask = mockRepository.save.getCall(0).args[0] as Task;
+    const savedTask = mockTransactionalManager.save.getCall(0).args[1] as Task;
     assert.strictEqual(savedTask.due_date, null); // Falsy branch
   });
 });

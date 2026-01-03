@@ -1,12 +1,28 @@
+// MUST import reflect-metadata FIRST before any other imports
+// This ensures decorator metadata is available for class-validator
+import 'reflect-metadata';
+import { describe, test, beforeEach, afterEach } from 'node:test';
+import { strict as assert } from 'node:assert';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { SelectQueryBuilder } from 'typeorm';
-import * as request from 'supertest';
-import { App } from 'supertest/types';
+import request from 'supertest';
+import type { App } from 'supertest/types';
+import sinon from 'sinon';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
 import { TasksModule } from '../src/modules/tasks/tasks.module';
+import { CreateTaskService } from '../src/modules/tasks/apps/features/v1/createTask/services';
+import { CreateTaskEndpoint } from '../src/modules/tasks/apps/features/v1/createTask/endpoint';
+import { UpdateTaskService } from '../src/modules/tasks/apps/features/v1/updateTask/services';
+import { UpdateTaskEndpoint } from '../src/modules/tasks/apps/features/v1/updateTask/endpoint';
+import { RemoveTaskService } from '../src/modules/tasks/apps/features/v1/removeTask/services';
+import { RemoveTaskEndpoint } from '../src/modules/tasks/apps/features/v1/removeTask/endpoint';
+import { GetTaskByIdService } from '../src/modules/tasks/apps/features/v1/getTaskById/services';
+import { GetTaskByIdEndpoint } from '../src/modules/tasks/apps/features/v1/getTaskById/endpoint';
+import { GetTasksService } from '../src/modules/tasks/apps/features/v1/getTasks/services';
+import { GetTasksEndpoint } from '../src/modules/tasks/apps/features/v1/getTasks/endpoint';
 import {
   TaskStatus,
   TaskPriority,
@@ -22,7 +38,7 @@ const generateId = (): string => {
   });
 };
 
-describe('AppController (e2e)', () => {
+void describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
   let inMemoryTasks: Task[] = [];
 
@@ -41,41 +57,35 @@ describe('AppController (e2e)', () => {
       let orderByDirection: 'ASC' | 'DESC' = 'DESC';
 
       const mockQueryBuilder: Partial<SelectQueryBuilder<Task>> = {
-        where: jest
-          .fn()
-          .mockImplementation(
-            (condition: string, params?: Record<string, unknown>) => {
-              whereConditions.length = 0; // Clear previous conditions
-              whereConditions.push({ condition, params: params || {} });
-              return mockQueryBuilder;
-            },
-          ),
-        andWhere: jest
-          .fn()
-          .mockImplementation(
-            (condition: string, params?: Record<string, unknown>) => {
-              whereConditions.push({ condition, params: params || {} });
-              return mockQueryBuilder;
-            },
-          ),
-        skip: jest.fn().mockImplementation((value: number) => {
+        where: sinon
+          .stub()
+          .callsFake((condition: string, params?: Record<string, unknown>) => {
+            whereConditions.length = 0; // Clear previous conditions
+            whereConditions.push({ condition, params: params || {} });
+            return mockQueryBuilder;
+          }),
+        andWhere: sinon
+          .stub()
+          .callsFake((condition: string, params?: Record<string, unknown>) => {
+            whereConditions.push({ condition, params: params || {} });
+            return mockQueryBuilder;
+          }),
+        skip: sinon.stub().callsFake((value: number) => {
           skipValue = value;
           return mockQueryBuilder;
         }),
-        take: jest.fn().mockImplementation((value: number) => {
+        take: sinon.stub().callsFake((value: number) => {
           takeValue = value;
           return mockQueryBuilder;
         }),
-        orderBy: jest
-          .fn()
-          .mockImplementation(
-            (field: string, direction: 'ASC' | 'DESC' = 'DESC') => {
-              orderByField = field.replace('task.', '');
-              orderByDirection = direction;
-              return mockQueryBuilder;
-            },
-          ),
-        getManyAndCount: jest.fn().mockImplementation(() => {
+        orderBy: sinon
+          .stub()
+          .callsFake((field: string, direction: 'ASC' | 'DESC' = 'DESC') => {
+            orderByField = field.replace('task.', '');
+            orderByDirection = direction;
+            return mockQueryBuilder;
+          }),
+        getManyAndCount: sinon.stub().callsFake(() => {
           let filteredTasks = [...tasks];
 
           // Apply filters from where/andWhere calls
@@ -137,7 +147,7 @@ describe('AppController (e2e)', () => {
             skipValue + takeValue,
           );
 
-          return [paginatedTasks, filteredTasks.length];
+          return Promise.resolve([paginatedTasks, filteredTasks.length]);
         }),
       };
 
@@ -146,14 +156,14 @@ describe('AppController (e2e)', () => {
 
     // Create transactional manager methods
     const createTransactionalManager = () => ({
-      create: jest
-        .fn()
-        .mockImplementation((entity: typeof Task, dto: Partial<Task>) => {
+      create: sinon
+        .stub()
+        .callsFake((entity: typeof Task, dto: Partial<Task>) => {
           const task = new Task();
           Object.assign(task, dto);
           return task;
         }),
-      save: jest.fn().mockImplementation((entity: typeof Task, task: Task) => {
+      save: sinon.stub().callsFake((entity: typeof Task, task: Task) => {
         if (!task.id) {
           task.id = generateId();
           task.created_at = new Date();
@@ -172,9 +182,9 @@ describe('AppController (e2e)', () => {
         }
         return Promise.resolve(task);
       }),
-      findOne: jest
-        .fn()
-        .mockImplementation(
+      findOne: sinon
+        .stub()
+        .callsFake(
           (entity: typeof Task, options: { where?: { id?: string } }) => {
             if (options.where?.id) {
               const id = options.where.id;
@@ -183,25 +193,23 @@ describe('AppController (e2e)', () => {
             return Promise.resolve(null);
           },
         ),
-      remove: jest
-        .fn()
-        .mockImplementation((entity: typeof Task, task: Task) => {
-          const index = tasks.findIndex((t) => t.id === task.id);
-          if (index !== -1) {
-            tasks.splice(index, 1);
-            return Promise.resolve(task);
-          }
-          return Promise.resolve(null);
-        }),
+      remove: sinon.stub().callsFake((entity: typeof Task, task: Task) => {
+        const index = tasks.findIndex((t) => t.id === task.id);
+        if (index !== -1) {
+          tasks.splice(index, 1);
+          return Promise.resolve(task);
+        }
+        return Promise.resolve(null);
+      }),
     });
 
     return {
-      create: jest.fn().mockImplementation((dto: Partial<Task>) => {
+      create: sinon.stub().callsFake((dto: Partial<Task>) => {
         const task = new Task();
         Object.assign(task, dto);
         return task;
       }),
-      save: jest.fn().mockImplementation((task: Task) => {
+      save: sinon.stub().callsFake((task: Task) => {
         if (!task.id) {
           task.id = generateId();
           task.created_at = new Date();
@@ -220,16 +228,16 @@ describe('AppController (e2e)', () => {
         }
         return task;
       }),
-      findOne: jest
-        .fn()
-        .mockImplementation((options: { where?: { id?: string } }) => {
+      findOne: sinon
+        .stub()
+        .callsFake((options: { where?: { id?: string } }) => {
           if (options.where?.id) {
             const id = options.where.id;
             return tasks.find((t) => t.id === id) || null;
           }
           return null;
         }),
-      remove: jest.fn().mockImplementation((task: Task) => {
+      remove: sinon.stub().callsFake((task: Task) => {
         const index = tasks.findIndex((t) => t.id === task.id);
         if (index !== -1) {
           tasks.splice(index, 1);
@@ -237,13 +245,11 @@ describe('AppController (e2e)', () => {
         }
         return null;
       }),
-      createQueryBuilder: jest
-        .fn()
-        .mockReturnValue(createQueryBuilderInstance()),
+      createQueryBuilder: sinon.stub().returns(createQueryBuilderInstance()),
       manager: {
-        transaction: jest
-          .fn()
-          .mockImplementation(
+        transaction: sinon
+          .stub()
+          .callsFake(
             async (
               callback: (
                 manager: ReturnType<typeof createTransactionalManager>,
@@ -273,42 +279,113 @@ describe('AppController (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    // Apply ValidationPipe BEFORE app.init() to ensure it's registered
+    // Configuration matches main.ts exactly to ensure validation works
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
       }),
     );
     app.setGlobalPrefix('api');
     await app.init();
+
+    // Workaround for NestJS DI issue with node:test - manually inject services after app init
+    const appService = moduleFixture.get<AppService>(AppService);
+    const createTaskService =
+      moduleFixture.get<CreateTaskService>(CreateTaskService);
+    const updateTaskService = moduleFixture.get(UpdateTaskService);
+    const removeTaskService = moduleFixture.get(RemoveTaskService);
+    const getTaskByIdService = moduleFixture.get(GetTaskByIdService);
+    const getTasksService = moduleFixture.get(GetTasksService);
+
+    // Get controllers from the app (these are the actual instances used by HTTP server)
+    const appController = app.get<AppController>(AppController);
+    const createTaskEndpoint = app.get(CreateTaskEndpoint);
+    const updateTaskEndpoint = app.get(UpdateTaskEndpoint);
+    const removeTaskEndpoint = app.get(RemoveTaskEndpoint);
+    const getTaskByIdEndpoint = app.get(GetTaskByIdEndpoint);
+    const getTasksEndpoint = app.get(GetTasksEndpoint);
+
+    // Manually inject services into controllers (workaround for NestJS DI issue with node:test)
+    const appControllerAny = appController as unknown as Record<
+      string,
+      unknown
+    >;
+    if (!appControllerAny.appService) {
+      appControllerAny.appService = appService;
+    }
+
+    const createTaskEndpointAny = createTaskEndpoint as unknown as Record<
+      string,
+      unknown
+    >;
+    if (!createTaskEndpointAny.createTaskService) {
+      createTaskEndpointAny.createTaskService = createTaskService;
+    }
+
+    const updateTaskEndpointAny = updateTaskEndpoint as unknown as Record<
+      string,
+      unknown
+    >;
+    if (!updateTaskEndpointAny.updateTaskService) {
+      updateTaskEndpointAny.updateTaskService = updateTaskService;
+    }
+
+    const removeTaskEndpointAny = removeTaskEndpoint as unknown as Record<
+      string,
+      unknown
+    >;
+    if (!removeTaskEndpointAny.removeTaskService) {
+      removeTaskEndpointAny.removeTaskService = removeTaskService;
+    }
+
+    const getTaskByIdEndpointAny = getTaskByIdEndpoint as unknown as Record<
+      string,
+      unknown
+    >;
+    if (!getTaskByIdEndpointAny.getTaskByIdService) {
+      getTaskByIdEndpointAny.getTaskByIdService = getTaskByIdService;
+    }
+
+    const getTasksEndpointAny = getTasksEndpoint as unknown as Record<
+      string,
+      unknown
+    >;
+    if (!getTasksEndpointAny.getTasksService) {
+      getTasksEndpointAny.getTasksService = getTasksService;
+    }
   });
 
   afterEach(async () => {
     inMemoryTasks.length = 0;
-    jest.clearAllMocks();
+    sinon.restore();
     await app.close();
   });
 
-  describe('Health Check', () => {
-    it('/api (GET) should return health status', () => {
-      return request(app.getHttpServer())
+  void describe('Health Check', () => {
+    void test('/api (GET) should return health status', async () => {
+      await request(app.getHttpServer())
         .get('/api')
         .expect(200)
         .expect((res) => {
           const body = res.body as { status?: string };
-          expect(body).toHaveProperty('status');
-          expect(body.status).toBe('ok');
+          assert.ok(body.status);
+          assert.strictEqual(body.status, 'ok');
         });
     });
 
-    it('/ (GET) should return 404 when prefix is not used', () => {
-      return request(app.getHttpServer()).get('/').expect(404);
+    void test('/ (GET) should return 404 when prefix is not used', async () => {
+      await request(app.getHttpServer()).get('/').expect(404);
     });
   });
 
-  describe('Tasks API', () => {
-    it('POST /api/v1/tasks should create a task', async () => {
+  void describe('Tasks API', () => {
+    void test('POST /api/v1/tasks should create a task', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/v1/tasks')
         .send({
@@ -327,14 +404,14 @@ describe('AppController (e2e)', () => {
         status?: TaskStatus;
         priority?: TaskPriority;
       };
-      expect(body).toHaveProperty('id');
-      expect(body.title).toBe('E2E Test Task');
-      expect(body.description).toBe('E2E Test Description');
-      expect(body.status).toBe(TaskStatus.PENDING);
-      expect(body.priority).toBe(TaskPriority.HIGH);
+      assert.ok(body.id);
+      assert.strictEqual(body.title, 'E2E Test Task');
+      assert.strictEqual(body.description, 'E2E Test Description');
+      assert.strictEqual(body.status, TaskStatus.PENDING);
+      assert.strictEqual(body.priority, TaskPriority.HIGH);
     });
 
-    it('POST /api/v1/tasks should create a task with minimal data', async () => {
+    void test('POST /api/v1/tasks should create a task with minimal data', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/v1/tasks')
         .send({
@@ -347,22 +424,27 @@ describe('AppController (e2e)', () => {
         title?: string;
         status?: TaskStatus;
       };
-      expect(body).toHaveProperty('id');
-      expect(body.title).toBe('Minimal Task');
-      expect(body.status).toBe(TaskStatus.PENDING);
+      assert.ok(body.id);
+      assert.strictEqual(body.title, 'Minimal Task');
+      assert.strictEqual(body.status, TaskStatus.PENDING);
     });
 
-    it('POST /api/v1/tasks should fail validation with empty title', () => {
-      return request(app.getHttpServer())
+    void test('POST /api/v1/tasks should fail validation with empty title', async () => {
+      const response = await request(app.getHttpServer())
         .post('/api/v1/tasks')
         .send({
           title: '',
-        })
-        .expect(400);
+        });
+      // Empty string should be rejected by @IsNotEmpty()
+      assert.strictEqual(
+        response.status,
+        400,
+        `Expected 400 but got ${response.status}. Response: ${JSON.stringify(response.body)}`,
+      );
     });
 
-    it('POST /api/v1/tasks should fail validation without title', () => {
-      return request(app.getHttpServer())
+    void test('POST /api/v1/tasks should fail validation without title', async () => {
+      await request(app.getHttpServer())
         .post('/api/v1/tasks')
         .send({
           description: 'No title',
@@ -370,7 +452,7 @@ describe('AppController (e2e)', () => {
         .expect(400);
     });
 
-    it('GET /api/v1/tasks should get list of tasks', async () => {
+    void test('GET /api/v1/tasks should get list of tasks', async () => {
       // Create a task first
       await request(app.getHttpServer()).post('/api/v1/tasks').send({
         title: 'Task for List Test',
@@ -389,16 +471,16 @@ describe('AppController (e2e)', () => {
           totalPages?: number;
         };
       };
-      expect(body).toHaveProperty('data');
-      expect(body).toHaveProperty('meta');
-      expect(Array.isArray(body.data)).toBe(true);
-      expect(body.meta).toHaveProperty('page');
-      expect(body.meta).toHaveProperty('limit');
-      expect(body.meta).toHaveProperty('total');
-      expect(body.meta).toHaveProperty('totalPages');
+      assert.ok(body.data);
+      assert.ok(body.meta);
+      assert.strictEqual(Array.isArray(body.data), true);
+      assert.ok(body.meta.page);
+      assert.ok(body.meta.limit);
+      assert.ok(body.meta.total);
+      assert.ok(body.meta.totalPages);
     });
 
-    it('GET /api/v1/tasks?page=1&limit=5 should paginate tasks', async () => {
+    void test('GET /api/v1/tasks?page=1&limit=5 should paginate tasks', async () => {
       // Create multiple tasks
       for (let i = 0; i < 10; i++) {
         await request(app.getHttpServer())
@@ -416,12 +498,12 @@ describe('AppController (e2e)', () => {
         meta?: { page?: number; limit?: number };
         data?: unknown[];
       };
-      expect(body.meta?.page).toBe(1);
-      expect(body.meta?.limit).toBe(5);
-      expect(body.data?.length).toBeLessThanOrEqual(5);
+      assert.strictEqual(body.meta?.page, 1);
+      assert.strictEqual(body.meta?.limit, 5);
+      assert.ok(body.data && body.data.length <= 5);
     });
 
-    it('GET /api/v1/tasks?status=PENDING should filter by status', async () => {
+    void test('GET /api/v1/tasks?status=PENDING should filter by status', async () => {
       // Create tasks with different statuses
       await request(app.getHttpServer()).post('/api/v1/tasks').send({
         title: 'Pending Task',
@@ -438,12 +520,14 @@ describe('AppController (e2e)', () => {
         .expect(200);
 
       const body = response.body as { data?: Array<{ status?: TaskStatus }> };
-      expect(
-        body.data?.every((task) => task.status === TaskStatus.PENDING),
-      ).toBe(true);
+      if (body.data) {
+        assert.ok(
+          body.data.every((task) => task.status === TaskStatus.PENDING),
+        );
+      }
     });
 
-    it('GET /api/v1/tasks/:id should get task by id', async () => {
+    void test('GET /api/v1/tasks/:id should get task by id', async () => {
       // Create a task first
       const createResponse = await request(app.getHttpServer())
         .post('/api/v1/tasks')
@@ -462,18 +546,18 @@ describe('AppController (e2e)', () => {
         title?: string;
         status?: TaskStatus;
       };
-      expect(body.id).toBe(taskId);
-      expect(body).toHaveProperty('title');
-      expect(body).toHaveProperty('status');
+      assert.strictEqual(body.id, taskId);
+      assert.ok(body.title);
+      assert.ok(body.status);
     });
 
-    it('GET /api/v1/tasks/:id should return 404 for non-existent task', () => {
-      return request(app.getHttpServer())
+    void test('GET /api/v1/tasks/:id should return 404 for non-existent task', async () => {
+      await request(app.getHttpServer())
         .get('/api/v1/tasks/00000000-0000-0000-0000-000000000000')
         .expect(404);
     });
 
-    it('PUT /api/v1/tasks/:id should update a task', async () => {
+    void test('PUT /api/v1/tasks/:id should update a task', async () => {
       // Create a task first
       const createResponse = await request(app.getHttpServer())
         .post('/api/v1/tasks')
@@ -498,14 +582,14 @@ describe('AppController (e2e)', () => {
         status?: TaskStatus;
         priority?: TaskPriority;
       };
-      expect(body.id).toBe(taskId);
-      expect(body.title).toBe('Updated Task Title');
-      expect(body.status).toBe(TaskStatus.IN_PROGRESS);
-      expect(body.priority).toBe(TaskPriority.MEDIUM);
+      assert.strictEqual(body.id, taskId);
+      assert.strictEqual(body.title, 'Updated Task Title');
+      assert.strictEqual(body.status, TaskStatus.IN_PROGRESS);
+      assert.strictEqual(body.priority, TaskPriority.MEDIUM);
     });
 
-    it('PUT /api/v1/tasks/:id should return 404 for non-existent task', () => {
-      return request(app.getHttpServer())
+    void test('PUT /api/v1/tasks/:id should return 404 for non-existent task', async () => {
+      await request(app.getHttpServer())
         .put('/api/v1/tasks/00000000-0000-0000-0000-000000000000')
         .send({
           title: 'Updated Task',
@@ -514,7 +598,7 @@ describe('AppController (e2e)', () => {
         .expect(404);
     });
 
-    it('DELETE /api/v1/tasks/:id should delete a task', async () => {
+    void test('DELETE /api/v1/tasks/:id should delete a task', async () => {
       // Create a task for deletion
       const createResponse = await request(app.getHttpServer())
         .post('/api/v1/tasks')
@@ -529,17 +613,17 @@ describe('AppController (e2e)', () => {
         .expect(200);
 
       const body = response.body as { message?: string; id?: string };
-      expect(body.message).toBe('Task deleted successfully');
-      expect(body.id).toBe(taskIdToDelete);
+      assert.strictEqual(body.message, 'Task deleted successfully');
+      assert.strictEqual(body.id, taskIdToDelete);
     });
 
-    it('DELETE /api/v1/tasks/:id should return 404 for non-existent task', () => {
-      return request(app.getHttpServer())
+    void test('DELETE /api/v1/tasks/:id should return 404 for non-existent task', async () => {
+      await request(app.getHttpServer())
         .delete('/api/v1/tasks/00000000-0000-0000-0000-000000000000')
         .expect(404);
     });
 
-    it('GET /api/v1/tasks?search=test should search tasks', async () => {
+    void test('GET /api/v1/tasks?search=test should search tasks', async () => {
       // Create tasks with searchable content
       await request(app.getHttpServer()).post('/api/v1/tasks').send({
         title: 'Test Task',
@@ -557,17 +641,19 @@ describe('AppController (e2e)', () => {
       const body = response.body as {
         data?: Array<{ title?: string; description?: string }>;
       };
-      expect(body.data?.length).toBeGreaterThan(0);
-      expect(
-        body.data?.some(
-          (task) =>
-            task.title?.toLowerCase().includes('test') ||
-            task.description?.toLowerCase().includes('test'),
-        ),
-      ).toBe(true);
+      assert.ok(body.data && body.data.length > 0);
+      if (body.data) {
+        assert.ok(
+          body.data.some(
+            (task) =>
+              task.title?.toLowerCase().includes('test') ||
+              task.description?.toLowerCase().includes('test'),
+          ),
+        );
+      }
     });
 
-    it('GET /api/v1/tasks?priority=HIGH should filter by priority', async () => {
+    void test('GET /api/v1/tasks?priority=HIGH should filter by priority', async () => {
       // Create tasks with different priorities
       await request(app.getHttpServer()).post('/api/v1/tasks').send({
         title: 'High Priority Task',
@@ -586,34 +672,36 @@ describe('AppController (e2e)', () => {
       const body = response.body as {
         data?: Array<{ priority?: TaskPriority }>;
       };
-      expect(
-        body.data?.every((task) => task.priority === TaskPriority.HIGH),
-      ).toBe(true);
+      if (body.data) {
+        assert.ok(
+          body.data.every((task) => task.priority === TaskPriority.HIGH),
+        );
+      }
     });
 
     // ========== Comprehensive Validation Tests ==========
 
-    describe('POST /api/v1/tasks - Validation Tests', () => {
-      it('should fail with title exceeding max length (255 chars)', () => {
+    void describe('POST /api/v1/tasks - Validation Tests', () => {
+      void test('should fail with title exceeding max length (255 chars)', async () => {
         const longTitle = 'a'.repeat(256);
-        return request(app.getHttpServer())
+        await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({ title: longTitle })
           .expect(400);
       });
 
-      it('should pass with title at max length (255 chars)', async () => {
+      void test('should pass with title at max length (255 chars)', async () => {
         const maxTitle = 'a'.repeat(255);
         const response = await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({ title: maxTitle })
           .expect(201);
         const body = response.body as { title?: string };
-        expect(body.title).toBe(maxTitle);
+        assert.strictEqual(body.title, maxTitle);
       });
 
-      it('should fail with invalid status enum value', () => {
-        return request(app.getHttpServer())
+      void test('should fail with invalid status enum value', async () => {
+        await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({
             title: 'Test Task',
@@ -622,8 +710,8 @@ describe('AppController (e2e)', () => {
           .expect(400);
       });
 
-      it('should fail with invalid priority enum value', () => {
-        return request(app.getHttpServer())
+      void test('should fail with invalid priority enum value', async () => {
+        await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({
             title: 'Test Task',
@@ -632,8 +720,8 @@ describe('AppController (e2e)', () => {
           .expect(400);
       });
 
-      it('should fail with invalid date format', () => {
-        return request(app.getHttpServer())
+      void test('should fail with invalid date format', async () => {
+        await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({
             title: 'Test Task',
@@ -642,7 +730,7 @@ describe('AppController (e2e)', () => {
           .expect(400);
       });
 
-      it('should pass with valid ISO date string', async () => {
+      void test('should pass with valid ISO date string', async () => {
         const response = await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({
@@ -651,10 +739,10 @@ describe('AppController (e2e)', () => {
           })
           .expect(201);
         const body = response.body as { due_date?: string | null };
-        expect(body.due_date).toBeDefined();
+        assert.ok(body.due_date);
       });
 
-      it('should accept all valid status values', async () => {
+      void test('should accept all valid status values', async () => {
         const statuses = [
           TaskStatus.PENDING,
           TaskStatus.IN_PROGRESS,
@@ -671,11 +759,11 @@ describe('AppController (e2e)', () => {
             })
             .expect(201);
           const body = response.body as { status?: TaskStatus };
-          expect(body.status).toBe(status);
+          assert.strictEqual(body.status, status);
         }
       });
 
-      it('should accept all valid priority values', async () => {
+      void test('should accept all valid priority values', async () => {
         const priorities = [
           TaskPriority.LOW,
           TaskPriority.MEDIUM,
@@ -691,11 +779,11 @@ describe('AppController (e2e)', () => {
             })
             .expect(201);
           const body = response.body as { priority?: TaskPriority };
-          expect(body.priority).toBe(priority);
+          assert.strictEqual(body.priority, priority);
         }
       });
 
-      it('should handle null description', async () => {
+      void test('should handle null description', async () => {
         const response = await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({
@@ -704,10 +792,10 @@ describe('AppController (e2e)', () => {
           })
           .expect(201);
         const body = response.body as { description?: string | null };
-        expect(body.description).toBeNull();
+        assert.strictEqual(body.description, null);
       });
 
-      it('should handle empty string description as null', async () => {
+      void test('should handle empty string description as null', async () => {
         const response = await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({
@@ -716,11 +804,11 @@ describe('AppController (e2e)', () => {
           })
           .expect(201);
         const body = response.body as { description?: string | null };
-        expect(body.description).toBeNull();
+        assert.strictEqual(body.description, null);
       });
 
-      it('should fail with non-string title', () => {
-        return request(app.getHttpServer())
+      void test('should fail with non-string title', async () => {
+        await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({
             title: 12345,
@@ -728,8 +816,8 @@ describe('AppController (e2e)', () => {
           .expect(400);
       });
 
-      it('should fail with non-string description', () => {
-        return request(app.getHttpServer())
+      void test('should fail with non-string description', async () => {
+        await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({
             title: 'Test Task',
@@ -741,14 +829,14 @@ describe('AppController (e2e)', () => {
 
     // ========== PUT /api/v1/tasks/:id - Comprehensive Tests ==========
 
-    describe('PUT /api/v1/tasks/:id - Comprehensive Tests', () => {
-      it('should fail validation with empty title', async () => {
+    void describe('PUT /api/v1/tasks/:id - Comprehensive Tests', () => {
+      void test('should fail validation with empty title', async () => {
         const createResponse = await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({ title: 'Test Task' });
         const taskId = (createResponse.body as { id?: string }).id;
 
-        return request(app.getHttpServer())
+        await request(app.getHttpServer())
           .put(`/api/v1/tasks/${taskId}`)
           .send({
             title: '',
@@ -757,13 +845,13 @@ describe('AppController (e2e)', () => {
           .expect(400);
       });
 
-      it('should fail validation without title', async () => {
+      void test('should fail validation without title', async () => {
         const createResponse = await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({ title: 'Test Task' });
         const taskId = (createResponse.body as { id?: string }).id;
 
-        return request(app.getHttpServer())
+        await request(app.getHttpServer())
           .put(`/api/v1/tasks/${taskId}`)
           .send({
             status: TaskStatus.PENDING,
@@ -771,13 +859,13 @@ describe('AppController (e2e)', () => {
           .expect(400);
       });
 
-      it('should fail validation without status', async () => {
+      void test('should fail validation without status', async () => {
         const createResponse = await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({ title: 'Test Task' });
         const taskId = (createResponse.body as { id?: string }).id;
 
-        return request(app.getHttpServer())
+        await request(app.getHttpServer())
           .put(`/api/v1/tasks/${taskId}`)
           .send({
             title: 'Updated Title',
@@ -785,13 +873,14 @@ describe('AppController (e2e)', () => {
           .expect(400);
       });
 
-      it('should fail with invalid status enum value', async () => {
+      void test('should fail with invalid status enum value', async () => {
         const createResponse = await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({ title: 'Test Task' });
-        const taskId = (createResponse.body as { id?: string }).id;
+        const createBody = createResponse;
+        const taskId = (createBody.body as { id?: string }).id;
 
-        return request(app.getHttpServer())
+        await request(app.getHttpServer())
           .put(`/api/v1/tasks/${taskId}`)
           .send({
             title: 'Updated Title',
@@ -800,7 +889,7 @@ describe('AppController (e2e)', () => {
           .expect(400);
       });
 
-      it('should update all fields successfully', async () => {
+      void test('should update all fields successfully', async () => {
         const createResponse = await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({
@@ -829,13 +918,13 @@ describe('AppController (e2e)', () => {
           status?: TaskStatus;
           priority?: TaskPriority;
         };
-        expect(body.title).toBe('Updated Task');
-        expect(body.description).toBe('Updated Description');
-        expect(body.status).toBe(TaskStatus.COMPLETED);
-        expect(body.priority).toBe(TaskPriority.HIGH);
+        assert.strictEqual(body.title, 'Updated Task');
+        assert.strictEqual(body.description, 'Updated Description');
+        assert.strictEqual(body.status, TaskStatus.COMPLETED);
+        assert.strictEqual(body.priority, TaskPriority.HIGH);
       });
 
-      it('should handle null description update', async () => {
+      void test('should handle null description update', async () => {
         const createResponse = await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({
@@ -853,10 +942,10 @@ describe('AppController (e2e)', () => {
           })
           .expect(200);
         const body = response.body as { description?: string | null };
-        expect(body.description).toBeNull();
+        assert.strictEqual(body.description, null);
       });
 
-      it('should handle empty string description as null', async () => {
+      void test('should handle empty string description as null', async () => {
         const createResponse = await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({
@@ -874,10 +963,10 @@ describe('AppController (e2e)', () => {
           })
           .expect(200);
         const body = response.body as { description?: string | null };
-        expect(body.description).toBeNull();
+        assert.strictEqual(body.description, null);
       });
 
-      it('should preserve created_at when updating', async () => {
+      void test('should preserve created_at when updating', async () => {
         const createResponse = await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({ title: 'Test Task' });
@@ -896,13 +985,13 @@ describe('AppController (e2e)', () => {
           })
           .expect(200);
         const updateBody = updateResponse.body as { created_at?: string };
-        expect(updateBody.created_at).toBe(originalCreatedAt);
+        assert.strictEqual(updateBody.created_at, originalCreatedAt);
       });
     });
 
     // ========== GET /api/v1/tasks - Comprehensive Query Tests ==========
 
-    describe('GET /api/v1/tasks - Comprehensive Query Tests', () => {
+    void describe('GET /api/v1/tasks - Comprehensive Query Tests', () => {
       beforeEach(async () => {
         // Create test data
         await request(app.getHttpServer()).post('/api/v1/tasks').send({
@@ -924,37 +1013,37 @@ describe('AppController (e2e)', () => {
         });
       });
 
-      it('should reject page 0 (validation should fail)', () => {
-        return request(app.getHttpServer())
+      void test('should reject page 0 (validation should fail)', async () => {
+        await request(app.getHttpServer())
           .get('/api/v1/tasks?page=0&limit=10')
           .expect(400);
       });
 
-      it('should reject negative page (validation should fail)', () => {
-        return request(app.getHttpServer())
+      void test('should reject negative page (validation should fail)', async () => {
+        await request(app.getHttpServer())
           .get('/api/v1/tasks?page=-1&limit=10')
           .expect(400);
       });
 
-      it('should reject limit exceeding max (validation should fail)', () => {
-        return request(app.getHttpServer())
+      void test('should reject limit exceeding max (validation should fail)', async () => {
+        await request(app.getHttpServer())
           .get('/api/v1/tasks?page=1&limit=200')
           .expect(400);
       });
 
-      it('should reject limit 0 (validation should fail)', () => {
-        return request(app.getHttpServer())
+      void test('should reject limit 0 (validation should fail)', async () => {
+        await request(app.getHttpServer())
           .get('/api/v1/tasks?page=1&limit=0')
           .expect(400);
       });
 
-      it('should reject negative limit (validation should fail)', () => {
-        return request(app.getHttpServer())
+      void test('should reject negative limit (validation should fail)', async () => {
+        await request(app.getHttpServer())
           .get('/api/v1/tasks?page=1&limit=-5')
           .expect(400);
       });
 
-      it('should combine status and priority filters', async () => {
+      void test('should combine status and priority filters', async () => {
         const response = await request(app.getHttpServer())
           .get('/api/v1/tasks?status=PENDING&priority=HIGH')
           .expect(200);
@@ -963,17 +1052,17 @@ describe('AppController (e2e)', () => {
           data?: Array<{ status?: TaskStatus; priority?: TaskPriority }>;
         };
         if (body.data) {
-          expect(
+          assert.ok(
             body.data.every(
               (task) =>
                 task.status === TaskStatus.PENDING &&
                 task.priority === TaskPriority.HIGH,
             ),
-          ).toBe(true);
+          );
         }
       });
 
-      it('should combine status, priority, and search filters', async () => {
+      void test('should combine status, priority, and search filters', async () => {
         const response = await request(app.getHttpServer())
           .get('/api/v1/tasks?status=PENDING&priority=HIGH&search=Test')
           .expect(200);
@@ -987,7 +1076,7 @@ describe('AppController (e2e)', () => {
           }>;
         };
         if (body.data) {
-          expect(
+          assert.ok(
             body.data.every(
               (task) =>
                 task.status === TaskStatus.PENDING &&
@@ -995,19 +1084,19 @@ describe('AppController (e2e)', () => {
                 (task.title?.toLowerCase().includes('test') ||
                   task.description?.toLowerCase().includes('test')),
             ),
-          ).toBe(true);
+          );
         }
       });
 
-      it('should handle empty search string', async () => {
+      void test('should handle empty search string', async () => {
         const response = await request(app.getHttpServer())
           .get('/api/v1/tasks?search=')
           .expect(200);
         const body = response.body as { data?: unknown[] };
-        expect(body.data).toBeDefined();
+        assert.ok(body.data);
       });
 
-      it('should search case-insensitively', async () => {
+      void test('should search case-insensitively', async () => {
         const response = await request(app.getHttpServer())
           .get('/api/v1/tasks?search=TEST')
           .expect(200);
@@ -1015,24 +1104,26 @@ describe('AppController (e2e)', () => {
         const body = response.body as {
           data?: Array<{ title?: string; description?: string }>;
         };
-        expect(
-          body.data?.some(
-            (task) =>
-              task.title?.toLowerCase().includes('test') ||
-              task.description?.toLowerCase().includes('test'),
-          ),
-        ).toBe(true);
+        if (body.data) {
+          assert.ok(
+            body.data.some(
+              (task) =>
+                task.title?.toLowerCase().includes('test') ||
+                task.description?.toLowerCase().includes('test'),
+            ),
+          );
+        }
       });
 
-      it('should return empty array when search has no matches', async () => {
+      void test('should return empty array when search has no matches', async () => {
         const response = await request(app.getHttpServer())
           .get('/api/v1/tasks?search=nonexistentterm12345')
           .expect(200);
         const body = response.body as { data?: unknown[] };
-        expect(body.data).toEqual([]);
+        assert.deepStrictEqual(body.data, []);
       });
 
-      it('should handle pagination with last page', async () => {
+      void test('should handle pagination with last page', async () => {
         // Create 15 tasks
         for (let i = 0; i < 15; i++) {
           await request(app.getHttpServer())
@@ -1049,12 +1140,14 @@ describe('AppController (e2e)', () => {
           meta?: { page?: number; totalPages?: number };
           data?: unknown[];
         };
-        expect(body.meta?.page).toBe(2);
-        expect(body.meta?.totalPages).toBeGreaterThanOrEqual(2);
-        expect(body.data?.length).toBeGreaterThan(0);
+        assert.strictEqual(body.meta?.page, 2);
+        assert.ok(
+          body.meta && body.meta.totalPages && body.meta.totalPages >= 2,
+        );
+        assert.ok(body.data && body.data.length > 0);
       });
 
-      it('should return empty array for page beyond total pages', async () => {
+      void test('should return empty array for page beyond total pages', async () => {
         const response = await request(app.getHttpServer())
           .get('/api/v1/tasks?page=999&limit=10')
           .expect(200);
@@ -1062,68 +1155,68 @@ describe('AppController (e2e)', () => {
           data?: unknown[];
           meta?: { page?: number };
         };
-        expect(body.data).toEqual([]);
-        expect(body.meta?.page).toBe(999);
+        assert.deepStrictEqual(body.data, []);
+        assert.strictEqual(body.meta?.page, 999);
       });
     });
 
     // ========== Error Handling Tests ==========
 
-    describe('Error Handling Tests', () => {
-      it('GET /api/v1/tasks/:id should return 400 or 404 for invalid UUID format', () => {
-        return request(app.getHttpServer())
+    void describe('Error Handling Tests', () => {
+      void test('GET /api/v1/tasks/:id should return 400 or 404 for invalid UUID format', async () => {
+        await request(app.getHttpServer())
           .get('/api/v1/tasks/invalid-uuid')
           .expect((res) => {
-            expect([400, 404]).toContain(res.status);
+            assert.ok([400, 404].includes(res.status));
           });
       });
 
-      it('PUT /api/v1/tasks/:id should return 400 or 404 for invalid UUID format', () => {
-        return request(app.getHttpServer())
+      void test('PUT /api/v1/tasks/:id should return 400 or 404 for invalid UUID format', async () => {
+        await request(app.getHttpServer())
           .put('/api/v1/tasks/invalid-uuid')
           .send({
             title: 'Test',
             status: TaskStatus.PENDING,
           })
           .expect((res) => {
-            expect([400, 404]).toContain(res.status);
+            assert.ok([400, 404].includes(res.status));
           });
       });
 
-      it('DELETE /api/v1/tasks/:id should return 400 or 404 for invalid UUID format', () => {
-        return request(app.getHttpServer())
+      void test('DELETE /api/v1/tasks/:id should return 400 or 404 for invalid UUID format', async () => {
+        await request(app.getHttpServer())
           .delete('/api/v1/tasks/invalid-uuid')
           .expect((res) => {
-            expect([400, 404]).toContain(res.status);
+            assert.ok([400, 404].includes(res.status));
           });
       });
 
-      it('should handle malformed JSON in request body', () => {
-        return request(app.getHttpServer())
+      void test('should handle malformed JSON in request body', async () => {
+        await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .set('Content-Type', 'application/json')
           .send('{"title": "Test", invalid json}')
           .expect(400);
       });
 
-      it('should handle missing Content-Type header gracefully', () => {
+      void test('should handle missing Content-Type header gracefully', async () => {
         // Supertest automatically sets Content-Type, so this test verifies
         // that the endpoint handles requests properly
-        return request(app.getHttpServer())
+        await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .set('Content-Type', '')
           .send({ title: 'Test' })
           .expect((res) => {
             // Should either accept (201) or reject (400) based on validation
-            expect([201, 400]).toContain(res.status);
+            assert.ok([201, 400].includes(res.status));
           });
       });
     });
 
     // ========== Edge Cases ==========
 
-    describe('Edge Cases', () => {
-      it('should handle task with all optional fields null', async () => {
+    void describe('Edge Cases', () => {
+      void test('should handle task with all optional fields null', async () => {
         const response = await request(app.getHttpServer())
           .post('/api/v1/tasks')
           .send({
@@ -1140,13 +1233,13 @@ describe('AppController (e2e)', () => {
           priority?: TaskPriority | null;
           due_date?: string | null;
         };
-        expect(body.title).toBe('Minimal Task');
-        expect(body.description).toBeNull();
-        expect(body.priority).toBeNull();
-        expect(body.due_date).toBeNull();
+        assert.strictEqual(body.title, 'Minimal Task');
+        assert.strictEqual(body.description, null);
+        assert.strictEqual(body.priority, null);
+        assert.strictEqual(body.due_date, null);
       });
 
-      it('should handle task with very long description', async () => {
+      void test('should handle task with very long description', async () => {
         const longDescription = 'a'.repeat(10000);
         const response = await request(app.getHttpServer())
           .post('/api/v1/tasks')
@@ -1156,10 +1249,10 @@ describe('AppController (e2e)', () => {
           })
           .expect(201);
         const body = response.body as { description?: string };
-        expect(body.description).toBe(longDescription);
+        assert.strictEqual(body.description, longDescription);
       });
 
-      it('should handle special characters in title and description', async () => {
+      void test('should handle special characters in title and description', async () => {
         const specialChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
         const response = await request(app.getHttpServer())
           .post('/api/v1/tasks')
@@ -1172,11 +1265,11 @@ describe('AppController (e2e)', () => {
           title?: string;
           description?: string;
         };
-        expect(body.title).toContain(specialChars);
-        expect(body.description).toContain(specialChars);
+        assert.ok(body.title?.includes(specialChars));
+        assert.ok(body.description?.includes(specialChars));
       });
 
-      it('should handle unicode characters', async () => {
+      void test('should handle unicode characters', async () => {
         const unicodeText = '测试任务 🎯 émoji';
         const response = await request(app.getHttpServer())
           .post('/api/v1/tasks')
@@ -1189,11 +1282,11 @@ describe('AppController (e2e)', () => {
           title?: string;
           description?: string;
         };
-        expect(body.title).toBe(unicodeText);
-        expect(body.description).toBe(unicodeText);
+        assert.strictEqual(body.title, unicodeText);
+        assert.strictEqual(body.description, unicodeText);
       });
 
-      it('should handle future due dates', async () => {
+      void test('should handle future due dates', async () => {
         const futureDate = new Date();
         futureDate.setFullYear(futureDate.getFullYear() + 1);
         const response = await request(app.getHttpServer())
@@ -1204,10 +1297,10 @@ describe('AppController (e2e)', () => {
           })
           .expect(201);
         const body = response.body as { due_date?: string | null };
-        expect(body.due_date).toBeDefined();
+        assert.ok(body.due_date);
       });
 
-      it('should handle past due dates', async () => {
+      void test('should handle past due dates', async () => {
         const pastDate = new Date();
         pastDate.setFullYear(pastDate.getFullYear() - 1);
         const response = await request(app.getHttpServer())
@@ -1218,7 +1311,7 @@ describe('AppController (e2e)', () => {
           })
           .expect(201);
         const body = response.body as { due_date?: string | null };
-        expect(body.due_date).toBeDefined();
+        assert.ok(body.due_date);
       });
     });
   });

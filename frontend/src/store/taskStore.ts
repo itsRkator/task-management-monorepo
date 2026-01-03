@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { taskApi } from '../lib/api';
 import type { Task, TaskStatus, TaskPriority, GetTasksQuery } from '../lib/api';
 import { AxiosError } from 'axios';
+import axios from 'axios';
 
 interface TaskState {
   tasks: Task[];
@@ -61,6 +62,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set((state) => ({ filters: { ...state.filters, ...filters } })),
 
   fetchTasks: async (query) => {
+    // Don't set loading if request was cancelled
+    if (axios.isCancel(query)) {
+      return;
+    }
+
     set({ loading: true, error: null });
     try {
       const filters = get().filters;
@@ -79,12 +85,32 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         loading: false,
       });
     } catch (error) {
+      // Ignore cancelled requests
+      if (axios.isCancel(error)) {
+        set({ loading: false });
+        return;
+      }
+
       if (error instanceof AxiosError) {
-        set({
-          error:
-            error.response?.data?.message ||
+        // Provide more specific error messages
+        let errorMessage = 'Failed to fetch tasks';
+        
+        if (error.response) {
+          // Server responded with error status
+          errorMessage =
+            error.response.data?.message ||
             error.message ||
-            'Failed to fetch tasks',
+            'Failed to fetch tasks';
+        } else if (error.request) {
+          // Request made but no response received
+          errorMessage = error.message || 'Network error';
+        } else {
+          // Error setting up request
+          errorMessage = error.message || 'An unexpected error occurred';
+        }
+
+        set({
+          error: errorMessage,
           loading: false,
         });
       } else {
@@ -102,12 +128,32 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       const task = await taskApi.getTaskById(id);
       set({ selectedTask: task, loading: false });
     } catch (error) {
+      // Ignore cancelled requests
+      if (axios.isCancel(error)) {
+        set({ loading: false });
+        return;
+      }
+
       if (error instanceof AxiosError) {
+        let errorMessage = 'Failed to fetch task';
+        
+        if (error.response) {
+          if (error.response.status === 404) {
+            errorMessage = 'Task not found';
+          } else {
+            errorMessage =
+              error.response.data?.message ||
+              error.message ||
+              'Failed to fetch task';
+          }
+        } else if (error.request) {
+          errorMessage = error.message || 'Network error: Unable to reach the server';
+        } else {
+          errorMessage = error.message || 'An unexpected error occurred';
+        }
+
         set({
-          error:
-            error.response?.data?.message ||
-            error.message ||
-            'Failed to fetch task',
+          error: errorMessage,
           loading: false,
         });
       } else {
@@ -126,12 +172,33 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       set({ loading: false });
       return task;
     } catch (error) {
+      if (axios.isCancel(error)) {
+        set({ loading: false });
+        throw new Error('Request cancelled');
+      }
+
       if (error instanceof AxiosError) {
+        let errorMessage = 'Failed to create task';
+        
+        if (error.response) {
+          if (error.response.status === 400) {
+            errorMessage =
+              error.response.data?.message ||
+              'Invalid task data. Please check your input.';
+          } else {
+            errorMessage =
+              error.response.data?.message ||
+              error.message ||
+              'Failed to create task';
+          }
+        } else if (error.request) {
+          errorMessage = error.message || 'Network error';
+        } else {
+          errorMessage = error.message || 'An unexpected error occurred';
+        }
+
         set({
-          error:
-            error.response?.data?.message ||
-            error.message ||
-            'Failed to create task',
+          error: errorMessage,
           loading: false,
         });
       } else {
@@ -152,12 +219,35 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       await get().fetchTasks(); // Refresh tasks list after update
       return task;
     } catch (error) {
+      if (axios.isCancel(error)) {
+        set({ loading: false });
+        throw new Error('Request cancelled');
+      }
+
       if (error instanceof AxiosError) {
+        let errorMessage = 'Failed to update task';
+        
+        if (error.response) {
+          if (error.response.status === 404) {
+            errorMessage = 'Task not found';
+          } else if (error.response.status === 400) {
+            errorMessage =
+              error.response.data?.message ||
+              'Invalid task data. Please check your input.';
+          } else {
+            errorMessage =
+              error.response.data?.message ||
+              error.message ||
+              'Failed to update task';
+          }
+        } else if (error.request) {
+          errorMessage = error.message || 'Network error';
+        } else {
+          errorMessage = error.message || 'An unexpected error occurred';
+        }
+
         set({
-          error:
-            error.response?.data?.message ||
-            error.message ||
-            'Failed to update task',
+          error: errorMessage,
           loading: false,
         });
       } else {
@@ -178,12 +268,31 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       // Refresh tasks list
       await get().fetchTasks();
     } catch (error) {
+      if (axios.isCancel(error)) {
+        set({ loading: false });
+        return;
+      }
+
       if (error instanceof AxiosError) {
+        let errorMessage = 'Failed to delete task';
+        
+        if (error.response) {
+          if (error.response.status === 404) {
+            errorMessage = 'Task not found';
+          } else {
+            errorMessage =
+              error.response.data?.message ||
+              error.message ||
+              'Failed to delete task';
+          }
+        } else if (error.request) {
+          errorMessage = error.message || 'Network error: Unable to reach the server';
+        } else {
+          errorMessage = error.message || 'An unexpected error occurred';
+        }
+
         set({
-          error:
-            error.response?.data?.message ||
-            error.message ||
-            'Failed to delete task',
+          error: errorMessage,
           loading: false,
         });
       } else {

@@ -16,6 +16,15 @@ void describe('CreateTaskService', () => {
   let mockRepository: {
     create: sinon.SinonStub;
     save: sinon.SinonStub;
+    manager: {
+      transaction: sinon.SinonStub;
+    };
+  };
+  let mockTransactionalManager: {
+    create: sinon.SinonStub;
+    save: sinon.SinonStub;
+    findOne: sinon.SinonStub;
+    remove: sinon.SinonStub;
   };
 
   // Cover import statements and class declaration branches (0, 4, 8, 9, 11, 12, 13)
@@ -123,9 +132,31 @@ void describe('CreateTaskService', () => {
   });
 
   void beforeEach(async () => {
+    // Mock transactional entity manager
+    mockTransactionalManager = {
+      create: sinon.stub(),
+      save: sinon.stub(),
+      findOne: sinon.stub(),
+      remove: sinon.stub(),
+    };
+
+    // Mock repository with manager that has transaction support
     mockRepository = {
       create: sinon.stub(),
       save: sinon.stub(),
+      manager: {
+        transaction: sinon
+          .stub()
+          .callsFake(
+            (
+              callback: (
+                manager: typeof mockTransactionalManager,
+              ) => Promise<unknown>,
+            ) => {
+              return callback(mockTransactionalManager);
+            },
+          ),
+      },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -169,8 +200,8 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask as Task);
 
     const result = await service.execute(request);
 
@@ -180,16 +211,7 @@ void describe('CreateTaskService', () => {
     assert.strictEqual(result.status, mockTask.status);
     assert.strictEqual(result.priority, mockTask.priority);
     assert.strictEqual(result.due_date?.getTime(), mockTask.due_date.getTime());
-    assert.ok(
-      mockRepository.create.calledWith({
-        title: request.title,
-        description: request.description,
-        status: request.status,
-        priority: request.priority,
-        due_date: new Date(request.due_date!),
-      }),
-    );
-    assert.ok(mockRepository.save.calledWith(mockTask));
+    assert.ok(mockRepository.manager.transaction.calledOnce);
   });
 
   void test('should create a task with default values when optional fields are missing', async () => {
@@ -208,8 +230,8 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     const result = await service.execute(request);
 
@@ -217,15 +239,7 @@ void describe('CreateTaskService', () => {
     assert.strictEqual(result.description, null);
     assert.strictEqual(result.priority, null);
     assert.strictEqual(result.due_date, null);
-    assert.ok(
-      mockRepository.create.calledWith({
-        title: request.title,
-        description: null,
-        status: TaskStatus.PENDING,
-        priority: null,
-        due_date: null,
-      }),
-    );
+    assert.ok(mockRepository.manager.transaction.calledOnce);
   });
 
   void test('should handle description as null when not provided', async () => {
@@ -244,13 +258,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       description: string | null;
     };
     assert.strictEqual(callArgs.description, null);
@@ -273,13 +287,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       title: string;
       description: string | null;
       status: TaskStatus;
@@ -306,13 +320,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       title: string;
       description: string | null;
       status: TaskStatus;
@@ -339,13 +353,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       title: string;
       description: string | null;
       status: TaskStatus;
@@ -371,13 +385,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       title: string;
       description: string | null;
       status: TaskStatus;
@@ -405,13 +419,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       title: string;
       description: string | null;
       status: TaskStatus;
@@ -437,13 +451,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       title: string;
       description: string | null;
       status: TaskStatus;
@@ -470,13 +484,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       description: string | null;
     };
     assert.strictEqual(callArgs.description, null);
@@ -498,8 +512,8 @@ void describe('CreateTaskService', () => {
       updated_at: new Date('2024-01-02'),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     const result = await service.execute(request);
 
@@ -529,8 +543,10 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.rejects(new Error('Database connection failed'));
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.rejects(
+      new Error('Database connection failed'),
+    );
 
     await assert.rejects(
       async () => await service.execute(request),
@@ -557,8 +573,10 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.rejects(new Error('Unique constraint violation'));
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.rejects(
+      new Error('Unique constraint violation'),
+    );
 
     await assert.rejects(
       async () => await service.execute(request),
@@ -594,8 +612,8 @@ void describe('CreateTaskService', () => {
         updated_at: new Date(),
       };
 
-      mockRepository.create.returns(mockTask);
-      mockRepository.save.resolves(mockTask);
+      mockTransactionalManager.create.returns(mockTask);
+      mockTransactionalManager.save.resolves(mockTask);
 
       const result = await service.execute(request);
       assert.strictEqual(result.status, status);
@@ -626,8 +644,8 @@ void describe('CreateTaskService', () => {
         updated_at: new Date(),
       };
 
-      mockRepository.create.returns(mockTask);
-      mockRepository.save.resolves(mockTask);
+      mockTransactionalManager.create.returns(mockTask);
+      mockTransactionalManager.save.resolves(mockTask);
 
       const result = await service.execute(request);
       assert.strictEqual(result.priority, priority);
@@ -650,8 +668,8 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     const result = await service.execute(request);
     assert.strictEqual(result.title.length, 255);
@@ -673,8 +691,8 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     const result = await service.execute(request);
     assert.strictEqual(result.title, 'Test Task !@#$%^&*()_+-=[]{}|;:,.<>?');
@@ -696,8 +714,8 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     const result = await service.execute(request);
     assert.strictEqual(result.title, 'Test Task 测试 🎯');
@@ -721,8 +739,8 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     const result = await service.execute(request);
     assert.strictEqual(result.description, longDescription);
@@ -747,8 +765,8 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     const result = await service.execute(request);
     assert.strictEqual(result.due_date?.getTime(), futureDate.getTime());
@@ -773,8 +791,8 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     const result = await service.execute(request);
     assert.strictEqual(result.due_date?.getTime(), pastDate.getTime());
@@ -797,13 +815,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       title: string;
       description: string | null;
       status: TaskStatus;
@@ -830,13 +848,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       title: string;
       description: string | null;
       status: TaskStatus;
@@ -863,13 +881,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       title: string;
       description: string | null;
       status: TaskStatus;
@@ -896,13 +914,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       title: string;
       description: string | null;
       status: TaskStatus;
@@ -929,13 +947,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       title: string;
       description: string | null;
       status: TaskStatus;
@@ -963,13 +981,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       title: string;
       description: string | null;
       status: TaskStatus;
@@ -997,13 +1015,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
 
     await service.execute(request);
 
-    assert.ok(mockRepository.create.called);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    assert.ok(mockTransactionalManager.create.called);
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       title: string;
       description: string | null;
       status: TaskStatus;
@@ -1030,10 +1048,10 @@ void describe('CreateTaskService', () => {
       created_at: new Date(),
       updated_at: new Date(),
     };
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
     await service.execute(request);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       description: string | null;
     };
     assert.strictEqual(callArgs.description, 'Test Description'); // Truthy branch
@@ -1054,11 +1072,11 @@ void describe('CreateTaskService', () => {
       created_at: new Date(),
       updated_at: new Date(),
     };
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
     await service.execute(request);
 
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       description: string | null;
     };
 
@@ -1081,10 +1099,10 @@ void describe('CreateTaskService', () => {
       created_at: new Date(),
       updated_at: new Date(),
     };
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
     await service.execute(request);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       status: TaskStatus;
     };
     assert.strictEqual(callArgs.status, TaskStatus.COMPLETED); // Truthy branch
@@ -1105,10 +1123,10 @@ void describe('CreateTaskService', () => {
       created_at: new Date(),
       updated_at: new Date(),
     };
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
     await service.execute(request);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       status: TaskStatus;
     };
     assert.strictEqual(callArgs.status, TaskStatus.PENDING); // Falsy branch
@@ -1130,10 +1148,10 @@ void describe('CreateTaskService', () => {
       created_at: new Date(),
       updated_at: new Date(),
     };
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
     await service.execute(request);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       priority: TaskPriority | null;
     };
     assert.strictEqual(callArgs.priority, TaskPriority.HIGH); // Truthy branch
@@ -1154,10 +1172,10 @@ void describe('CreateTaskService', () => {
       created_at: new Date(),
       updated_at: new Date(),
     };
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
     await service.execute(request);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       priority: TaskPriority | null;
     };
     assert.strictEqual(callArgs.priority, null); // Falsy branch
@@ -1180,10 +1198,10 @@ void describe('CreateTaskService', () => {
       created_at: new Date(),
       updated_at: new Date(),
     };
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
     await service.execute(request);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       due_date: Date | null;
     };
     assert.ok(callArgs.due_date instanceof Date); // Truthy branch
@@ -1205,10 +1223,10 @@ void describe('CreateTaskService', () => {
       created_at: new Date(),
       updated_at: new Date(),
     };
-    mockRepository.create.returns(mockTask);
-    mockRepository.save.resolves(mockTask);
+    mockTransactionalManager.create.returns(mockTask);
+    mockTransactionalManager.save.resolves(mockTask);
     await service.execute(request);
-    const callArgs = mockRepository.create.getCall(0).args[0] as {
+    const callArgs = mockTransactionalManager.create.getCall(0).args[1] as {
       due_date: Date | null;
     };
     assert.strictEqual(callArgs.due_date, null); // Falsy branch

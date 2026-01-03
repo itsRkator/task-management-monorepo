@@ -2,6 +2,7 @@ import { describe, test, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { BadRequestException } from '@nestjs/common';
 import sinon from 'sinon';
 import { GetTasksService } from './index';
 import {
@@ -543,12 +544,19 @@ void describe('GetTasksService', () => {
       limit: 10,
     };
 
-    mockQueryBuilder.getManyAndCount.resolves([[], 0]);
-
-    const result = await service.execute(query);
-
-    // 0 is falsy, so should use default page 1
-    assert.strictEqual(result.meta.page, 1);
+    // Page 0 is invalid and should be rejected with BadRequestException
+    await assert.rejects(
+      async () => {
+        await service.execute(query);
+      },
+      (error: Error) => {
+        return (
+          error instanceof BadRequestException &&
+          error.message.includes('Page must be a positive integer')
+        );
+      },
+      'Should throw BadRequestException for page=0',
+    );
   });
 
   void test('should handle query with limit explicitly set to 0 (falsy, should use default)', async () => {
@@ -557,12 +565,19 @@ void describe('GetTasksService', () => {
       limit: 0 as unknown as number,
     };
 
-    mockQueryBuilder.getManyAndCount.resolves([[], 0]);
-
-    const result = await service.execute(query);
-
-    // 0 is falsy, so should use default limit 10
-    assert.strictEqual(result.meta.limit, 10);
+    // Limit 0 is invalid and should be rejected with BadRequestException
+    await assert.rejects(
+      async () => {
+        await service.execute(query);
+      },
+      (error: Error) => {
+        return (
+          error instanceof BadRequestException &&
+          error.message.includes('Limit must be a positive integer')
+        );
+      },
+      'Should throw BadRequestException for limit=0',
+    );
   });
 
   void test('should handle query with null status (falsy)', async () => {

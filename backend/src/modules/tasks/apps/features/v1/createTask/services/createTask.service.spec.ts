@@ -11,9 +11,20 @@ import { CreateTaskRequestDto } from '../contract';
 void describe('CreateTaskService', () => {
   let service: CreateTaskService;
 
+  const mockTransactionalEntityManager = {
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
   const mockRepository = {
     create: jest.fn(),
     save: jest.fn(),
+    manager: {
+      transaction: jest.fn(async (callback) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
+        return await callback(mockTransactionalEntityManager);
+      }),
+    },
   };
 
   void beforeEach(async () => {
@@ -58,8 +69,8 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     const result = await service.execute(request);
 
@@ -69,14 +80,17 @@ void describe('CreateTaskService', () => {
     expect(result.status).toBe(mockTask.status);
     expect(result.priority).toBe(mockTask.priority);
     expect(result.due_date?.getTime()).toBe(mockTask.due_date.getTime());
-    expect(mockRepository.create).toHaveBeenCalledWith({
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(Task, {
       title: request.title,
       description: request.description,
       status: request.status,
       priority: request.priority,
       due_date: new Date(request.due_date!),
     });
-    expect(mockRepository.save).toHaveBeenCalledWith(mockTask);
+    expect(mockTransactionalEntityManager.save).toHaveBeenCalledWith(
+      Task,
+      mockTask,
+    );
   });
 
   void it('should create a task with default values when optional fields are missing', async () => {
@@ -95,8 +109,8 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     const result = await service.execute(request);
 
@@ -104,7 +118,7 @@ void describe('CreateTaskService', () => {
     expect(result.description).toBeNull();
     expect(result.priority).toBeNull();
     expect(result.due_date).toBeNull();
-    expect(mockRepository.create).toHaveBeenCalledWith({
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(Task, {
       title: request.title,
       description: null,
       status: TaskStatus.PENDING,
@@ -129,12 +143,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         description: null,
       }),
@@ -158,12 +173,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         description: 'Test Description',
       }),
@@ -187,12 +203,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         status: TaskStatus.IN_PROGRESS,
       }),
@@ -216,12 +233,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         priority: TaskPriority.MEDIUM,
       }),
@@ -244,12 +262,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         priority: null,
       }),
@@ -274,12 +293,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         due_date: dueDate,
       }),
@@ -302,12 +322,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         due_date: null,
       }),
@@ -331,12 +352,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         description: null,
       }),
@@ -359,8 +381,8 @@ void describe('CreateTaskService', () => {
       updated_at: new Date('2024-01-02'),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     const result = await service.execute(request);
 
@@ -390,13 +412,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
     const dbError = new Error('Database connection failed');
-    mockRepository.save.mockRejectedValue(dbError);
+    mockTransactionalEntityManager.save.mockRejectedValue(dbError);
 
     await expect(service.execute(request)).rejects.toThrow(dbError);
-    expect(mockRepository.create).toHaveBeenCalled();
-    expect(mockRepository.save).toHaveBeenCalled();
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalled();
+    expect(mockTransactionalEntityManager.save).toHaveBeenCalled();
   });
 
   void it('should handle database constraint violations', async () => {
@@ -415,13 +437,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
     const constraintError = new Error('Unique constraint violation');
-    mockRepository.save.mockRejectedValue(constraintError);
+    mockTransactionalEntityManager.save.mockRejectedValue(constraintError);
 
     await expect(service.execute(request)).rejects.toThrow(constraintError);
-    expect(mockRepository.create).toHaveBeenCalled();
-    expect(mockRepository.save).toHaveBeenCalled();
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalled();
+    expect(mockTransactionalEntityManager.save).toHaveBeenCalled();
   });
 
   void it('should cover || operator truthy branch for description', async () => {
@@ -441,12 +463,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         description: 'Test Description', // Truthy branch
       }),
@@ -469,12 +492,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         description: null, // Falsy branch
       }),
@@ -498,12 +522,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         status: TaskStatus.IN_PROGRESS, // Truthy branch
       }),
@@ -526,12 +551,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         status: TaskStatus.PENDING, // Falsy branch (default)
       }),
@@ -555,12 +581,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         priority: TaskPriority.HIGH, // Truthy branch
       }),
@@ -583,12 +610,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         priority: null, // Falsy branch
       }),
@@ -613,12 +641,13 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         due_date: expect.any(Date) as Date, // Truthy branch
       }),
@@ -641,14 +670,126 @@ void describe('CreateTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.create.mockReturnValue(mockTask);
-    mockRepository.save.mockResolvedValue(mockTask);
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
 
     await service.execute(request);
 
-    expect(mockRepository.create).toHaveBeenCalledWith(
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
       expect.objectContaining({
         due_date: null, // Falsy branch
+      }),
+    );
+  });
+
+  void it('should throw BadRequestException when title is not a string', async () => {
+    const request = {
+      title: 123 as unknown as string,
+    } as CreateTaskRequestDto;
+
+    await expect(service.execute(request)).rejects.toThrow(
+      'Title is required and must be a string',
+    );
+  });
+
+  void it('should throw BadRequestException when title is empty after trim', async () => {
+    const request: CreateTaskRequestDto = {
+      title: '   ',
+    };
+
+    await expect(service.execute(request)).rejects.toThrow(
+      'Title cannot be empty',
+    );
+  });
+
+  void it('should throw BadRequestException when title exceeds 255 characters', async () => {
+    const request: CreateTaskRequestDto = {
+      title: 'a'.repeat(256),
+    };
+
+    await expect(service.execute(request)).rejects.toThrow(
+      'Title cannot exceed 255 characters',
+    );
+  });
+
+  void it('should throw BadRequestException when status is invalid', async () => {
+    const request = {
+      title: 'Test Task',
+      status: 'INVALID_STATUS' as TaskStatus,
+    } as CreateTaskRequestDto;
+
+    await expect(service.execute(request)).rejects.toThrow('Invalid status');
+  });
+
+  void it('should throw BadRequestException when priority is invalid', async () => {
+    const request = {
+      title: 'Test Task',
+      priority: 'INVALID_PRIORITY' as TaskPriority,
+    } as CreateTaskRequestDto;
+
+    await expect(service.execute(request)).rejects.toThrow('Invalid priority');
+  });
+
+  void it('should throw BadRequestException when due_date is not a string', async () => {
+    const request = {
+      title: 'Test Task',
+      due_date: 123 as unknown as string,
+    } as CreateTaskRequestDto;
+
+    await expect(service.execute(request)).rejects.toThrow(
+      'Due date must be a string in ISO format',
+    );
+  });
+
+  void it('should throw BadRequestException when due_date is invalid format', async () => {
+    const request: CreateTaskRequestDto = {
+      title: 'Test Task',
+      due_date: 'invalid-date',
+    };
+
+    await expect(service.execute(request)).rejects.toThrow(
+      'Invalid date format',
+    );
+  });
+
+  void it('should throw BadRequestException when description is not a string', async () => {
+    const request = {
+      title: 'Test Task',
+      description: 123 as unknown as string,
+    } as CreateTaskRequestDto;
+
+    await expect(service.execute(request)).rejects.toThrow(
+      'Description must be a string',
+    );
+  });
+
+  void it('should set description to null when trim() returns empty string', async () => {
+    const request: CreateTaskRequestDto = {
+      title: 'Test Task',
+      description: '   ',
+    };
+
+    const mockTask = {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      title: 'Test Task',
+      description: null,
+      status: TaskStatus.PENDING,
+      priority: null,
+      due_date: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+
+    mockTransactionalEntityManager.create.mockReturnValue(mockTask);
+    mockTransactionalEntityManager.save.mockResolvedValue(mockTask);
+
+    await service.execute(request);
+
+    expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
+      Task,
+      expect.objectContaining({
+        description: null, // trim() returns empty, so || null makes it null
       }),
     );
   });

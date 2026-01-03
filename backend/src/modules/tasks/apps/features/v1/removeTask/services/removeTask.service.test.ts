@@ -12,6 +12,15 @@ void describe('RemoveTaskService', () => {
   let mockRepository: {
     findOne: sinon.SinonStub;
     remove: sinon.SinonStub;
+    manager: {
+      transaction: sinon.SinonStub;
+    };
+  };
+  let mockTransactionalManager: {
+    findOne: sinon.SinonStub;
+    save: sinon.SinonStub;
+    create: sinon.SinonStub;
+    remove: sinon.SinonStub;
   };
 
   // Cover import statements and class declaration branches (0, 4, 8, 9, 11, 12, 13)
@@ -119,9 +128,29 @@ void describe('RemoveTaskService', () => {
   });
 
   void beforeEach(async () => {
+    mockTransactionalManager = {
+      findOne: sinon.stub(),
+      save: sinon.stub(),
+      create: sinon.stub(),
+      remove: sinon.stub(),
+    };
+
     mockRepository = {
       findOne: sinon.stub(),
       remove: sinon.stub(),
+      manager: {
+        transaction: sinon
+          .stub()
+          .callsFake(
+            async (
+              callback: (
+                manager: typeof mockTransactionalManager,
+              ) => Promise<unknown>,
+            ): Promise<unknown> => {
+              return await callback(mockTransactionalManager);
+            },
+          ),
+      },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -158,27 +187,28 @@ void describe('RemoveTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.findOne.resolves(mockTask);
-    mockRepository.remove.resolves(mockTask);
+    mockTransactionalManager.findOne.resolves(mockTask);
+    mockTransactionalManager.remove.resolves(mockTask);
 
     const result = await service.execute(taskId);
 
     assert.strictEqual(result.id, taskId);
     assert.strictEqual(result.message, 'Task deleted successfully');
     assert.ok(
-      mockRepository.findOne.calledWith({
+      mockTransactionalManager.findOne.calledWith(Task, {
         where: { id: taskId },
       }),
     );
-    assert.ok(mockRepository.remove.calledWith(mockTask));
-    assert.strictEqual(mockRepository.findOne.callCount, 1);
-    assert.strictEqual(mockRepository.remove.callCount, 1);
+    assert.ok(mockTransactionalManager.remove.calledWith(Task, mockTask));
+    assert.strictEqual(mockTransactionalManager.findOne.callCount, 1);
+    assert.strictEqual(mockTransactionalManager.remove.callCount, 1);
+    assert.ok(mockRepository.manager.transaction.calledOnce);
   });
 
   void test('should throw NotFoundException when task does not exist', async () => {
     const taskId = 'non-existent-id';
 
-    mockRepository.findOne.resolves(null);
+    mockTransactionalManager.findOne.resolves(null);
 
     await assert.rejects(
       async () => await service.execute(taskId),
@@ -189,17 +219,18 @@ void describe('RemoveTaskService', () => {
       },
     );
     assert.ok(
-      mockRepository.findOne.calledWith({
+      mockTransactionalManager.findOne.calledWith(Task, {
         where: { id: taskId },
       }),
     );
-    assert.strictEqual(mockRepository.remove.callCount, 0);
+    assert.strictEqual(mockTransactionalManager.remove.callCount, 0);
+    assert.ok(mockRepository.manager.transaction.calledOnce);
   });
 
   void test('should handle undefined task (branch coverage for !task check)', async () => {
     const taskId = 'non-existent-id';
 
-    mockRepository.findOne.resolves(undefined);
+    mockTransactionalManager.findOne.resolves(undefined);
 
     await assert.rejects(
       async () => await service.execute(taskId),
@@ -208,13 +239,15 @@ void describe('RemoveTaskService', () => {
         return true;
       },
     );
-    assert.strictEqual(mockRepository.remove.callCount, 0);
+    assert.strictEqual(mockTransactionalManager.remove.callCount, 0);
   });
 
   void test('should handle database errors during findOne', async () => {
     const taskId = '123e4567-e89b-12d3-a456-426614174000';
 
-    mockRepository.findOne.rejects(new Error('Database connection failed'));
+    mockTransactionalManager.findOne.rejects(
+      new Error('Database connection failed'),
+    );
 
     await assert.rejects(
       async () => await service.execute(taskId),
@@ -238,8 +271,10 @@ void describe('RemoveTaskService', () => {
       updated_at: new Date(),
     };
 
-    mockRepository.findOne.resolves(mockTask);
-    mockRepository.remove.rejects(new Error('Database connection failed'));
+    mockTransactionalManager.findOne.resolves(mockTask);
+    mockTransactionalManager.remove.rejects(
+      new Error('Database connection failed'),
+    );
 
     await assert.rejects(
       async () => await service.execute(taskId),

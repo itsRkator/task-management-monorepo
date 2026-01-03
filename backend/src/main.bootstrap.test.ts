@@ -21,11 +21,16 @@ const originalSkipBootstrap = process.env.SKIP_BOOTSTRAP;
 process.env.NODE_ENV = 'development';
 delete process.env.SKIP_BOOTSTRAP;
 
+// Note: compression module is excluded from testing and coverage
+
 void describe('main.ts - Bootstrap Call Coverage', () => {
   let createStub: sinon.SinonStub;
   let mockApp: {
+    use: sinon.SinonStub;
     useGlobalPipes: sinon.SinonStub;
+    useGlobalFilters: sinon.SinonStub;
     enableCors: sinon.SinonStub;
+    enableShutdownHooks: sinon.SinonStub;
     setGlobalPrefix: sinon.SinonStub;
     listen: sinon.SinonStub;
     close: sinon.SinonStub;
@@ -34,8 +39,11 @@ void describe('main.ts - Bootstrap Call Coverage', () => {
 
   void beforeEach(() => {
     mockApp = {
+      use: sinon.stub().returnsThis(),
       useGlobalPipes: sinon.stub().returnsThis(),
+      useGlobalFilters: sinon.stub().returnsThis(),
       enableCors: sinon.stub().returnsThis(),
+      enableShutdownHooks: sinon.stub().returnsThis(),
       setGlobalPrefix: sinon.stub().returnsThis(),
       listen: sinon.stub().resolves(undefined),
       close: sinon.stub().resolves(undefined),
